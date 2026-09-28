@@ -1,0 +1,142 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- 再次合并 MDIX 默认样式：保证本字典内 BasedOn 能解析到控件默认样式，
+         不依赖 App.xaml 中 MergedDictionaries 的先后顺序。 -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- ==================== 玻璃质感基础画刷 ==================== -->
+
+    <!-- 窗体玻璃底色：淡蓝 → 淡青的柔和渐变，保留透明度让桌面透出，形成 macOS 亚克力观感 -->
+    <LinearGradientBrush x:Key="GlassWindowBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#D9F4F8FF" Offset="0"/>
+        <GradientStop Color="#CDE9F6FF" Offset="0.45"/>
+        <GradientStop Color="#D8F1F3FF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- 玻璃卡片面：半透明白，透出底层渐变形成层次 -->
+    <SolidColorBrush x:Key="GlassSurfaceBrush" Color="#B8FFFFFF"/>
+    <SolidColorBrush x:Key="GlassSurfaceStrongBrush" Color="#D9FFFFFF"/>
+    <SolidColorBrush x:Key="GlassSurfaceSoftBrush" Color="#7AFFFFFF"/>
+
+    <!-- 直接改写 MDIX 卡片底色：即使卡片样式未命中，也能保证全局玻璃观感 -->
+    <SolidColorBrush x:Key="MaterialDesignCardBackground" Color="#B8FFFFFF"/>
+
+    <!-- 玻璃高光描边：上白下灰，模拟 macOS 控件边缘反光 -->
+    <LinearGradientBrush x:Key="GlassBorderBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#CCFFFFFF" Offset="0"/>
+        <GradientStop Color="#59FFFFFF" Offset="0.55"/>
+        <GradientStop Color="#2E5A6B7A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- 顶栏（macOS 工具栏）玻璃色：比内容区更实一点，保证文字可读 -->
+    <LinearGradientBrush x:Key="GlassTopBarBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F2FFFFFF" Offset="0"/>
+        <GradientStop Color="#D2EFF6FF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- 玻璃分割线 -->
+    <SolidColorBrush x:Key="GlassDividerBrush" Color="#335A6B7A"/>
+
+    <!-- 玻璃面板上的文字色：主色接近纯黑，次色为加深的蓝灰，
+         保证在半透明玻璃底色上仍有足够对比度（小字号也清晰可读） -->
+    <SolidColorBrush x:Key="GlassTextBrush" Color="#F2142029"/>
+    <SolidColorBrush x:Key="GlassTextSecondaryBrush" Color="#EE42576B"/>
+
+    <!-- ==================== 玻璃面板（非 Card 容器通用） ==================== -->
+
+    <Style x:Key="GlassPanel" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="GlassPanelStrong" TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+    </Style>
+
+    <!-- ==================== macOS 交通灯窗口按钮 ==================== -->
+
+    <Style x:Key="MacWindowButton" TargetType="Button">
+        <Setter Property="Width" Value="13"/>
+        <Setter Property="Height" Value="13"/>
+        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <!-- 常显窗口功能符号：使用系统内置 Segoe MDL2 Assets 字体，初学者无需悬浮也能分辨 -->
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontSize" Value="7.5"/>
+        <Setter Property="Foreground" Value="#99FFFFFF"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Width="13" Height="13">
+                        <Ellipse x:Name="Dot" Fill="{TemplateBinding Background}"/>
+                        <Ellipse x:Name="Ring" Stroke="#26000000" StrokeThickness="0.6" Fill="Transparent"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Margin="0,-0.5,0,0" IsHitTestVisible="False"
+                                          TextBlock.FontFamily="{TemplateBinding FontFamily}"
+                                          TextBlock.FontSize="{TemplateBinding FontSize}"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Ring" Property="Stroke" Value="#59000000"/>
+                            <Setter Property="Foreground" Value="#F2FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Dot" Property="Opacity" Value="0.6"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ==================== 玻璃工具栏按钮（顶栏导航） ==================== -->
+
+    <Style x:Key="GlassNavButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="Margin" Value="3,0"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="#D01B2733"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#59FFFFFF"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="GlassNavButtonActive" TargetType="Button" BasedOn="{StaticResource GlassNavButton}">
+        <Setter Property="Background" Value="#CCFFFFFF"/>
+        <Setter Property="Foreground" Value="#FF1976D2"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ==================== 玻璃胶囊（昵称等小标签） ==================== -->
+
+    <Style x:Key="GlassPill" TargetType="Border">
+        <Setter Property="Background" Value="#80FFFFFF"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="12,5"/>
+    </Style>
+
+    <!-- ==================== 玻璃滚动条（弱化处理，避免破坏通透感） ==================== -->
+
+    <Style x:Key="GlassScrollViewer" TargetType="ScrollViewer">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="4,0,4,4"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+    </Style>
+</ResourceDictionary>

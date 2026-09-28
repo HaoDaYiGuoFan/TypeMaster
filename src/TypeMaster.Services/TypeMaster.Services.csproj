@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 目标框架必须带 -windows：本项目音频/语音依赖 Windows 专有 API
+         （NAudio 的 WaveOut 输出设备、SAPI 语音合成），在纯 net8.0 下不可见。 -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TypeMaster.Services</RootNamespace>
+    <AssemblyName>TypeMaster.Services</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Windows 内置语音合成（SAPI）：用于学习园地的口诀与拼音朗读，完全离线 -->
+    <PackageReference Include="System.Speech" Version="8.0.0" />
+    <!-- 音频引擎：背景音乐（MP3 循环/音量）与音效混音播放，替代无法控音的 Console.Beep -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeMaster.Core\TypeMaster.Core.csproj" />
+  </ItemGroup>
+
+</Project>

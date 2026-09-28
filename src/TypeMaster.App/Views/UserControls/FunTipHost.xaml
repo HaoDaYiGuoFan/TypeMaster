@@ -1,0 +1,55 @@
+<UserControl x:Class="TypeMaster.App.Views.UserControls.FunTipHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <!-- 进入：从上方轻轻滑入 + 淡入（使用缓出，不弹跳，避免 AI 模板味的弹性缓动） -->
+        <Storyboard x:Key="ToastIn">
+            <DoubleAnimation Storyboard.TargetName="Toast"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.25">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="Translate"
+                             Storyboard.TargetProperty="Y"
+                             From="-18" To="0" Duration="0:0:0.28">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <!-- 退出：缓缓淡出 -->
+        <Storyboard x:Key="ToastOut">
+            <DoubleAnimation Storyboard.TargetName="Toast"
+                             Storyboard.TargetProperty="Opacity"
+                             From="1" To="0" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </UserControl.Resources>
+
+    <Border x:Name="Toast" Opacity="0" Visibility="Collapsed"
+            Background="{DynamicResource GlassSurfaceStrongBrush}"
+            BorderBrush="{DynamicResource GlassBorderBrush}"
+            BorderThickness="1" CornerRadius="14" Padding="14,10">
+        <Border.Effect>
+            <DropShadowEffect x:Name="ToastGlow" BlurRadius="18" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
+        <Border.RenderTransform>
+            <TranslateTransform x:Name="Translate" Y="-18"/>
+        </Border.RenderTransform>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <materialDesign:PackIcon x:Name="ToastIcon" Width="26" Height="26"
+                                     Margin="0,0,10,0" VerticalAlignment="Center"/>
+            <TextBlock x:Name="ToastText" FontSize="15" FontWeight="Bold"
+                       VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="420"/>
+        </StackPanel>
+    </Border>
+</UserControl>

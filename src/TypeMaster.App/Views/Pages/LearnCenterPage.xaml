@@ -1,0 +1,429 @@
+<UserControl x:Class="TypeMaster.App.Views.Pages.LearnCenterPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+
+        <!-- 朗读小按钮：矢量喇叭图标（沿用 MDIX PackIcon，不使用 emoji） -->
+        <Style x:Key="SpeakIconButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="SpeakBorder" CornerRadius="15"
+                                Background="#66FFFFFF"
+                                BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1">
+                            <materialDesign:PackIcon x:Name="SpeakIcon" Kind="VolumeHigh"
+                                                     Width="15" Height="15"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="SpeakBorder" Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                <Setter TargetName="SpeakIcon" Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="SpeakIcon" Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 「朗读全部」文字按钮 -->
+        <Style x:Key="SpeakAllButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8"/>
+        </Style>
+
+        <!-- 指法页基准键位小键帽 -->
+        <Style x:Key="FingerKeyStyle" TargetType="Border">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Background" Value="#CCFFFFFF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassDividerBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- 顶部页签按钮：选中实底蓝底白字，未选中玻璃描边 -->
+        <Style x:Key="LearnTabButton" TargetType="RadioButton" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10"/>
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 五笔字根卡片：键位徽章 + 键名 + 口诀 + 主要字根 -->
+        <DataTemplate x:Key="WubiRootCardTemplate">
+            <Border Width="468" Margin="8" CornerRadius="12" Padding="14,12"
+                    Background="{DynamicResource GlassSurfaceStrongBrush}"
+                    BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                        <Border Width="46" Height="46" CornerRadius="12" HorizontalAlignment="Center"
+                                Background="{DynamicResource PrimaryHueMidBrush}">
+                            <TextBlock Text="{Binding Key}" FontSize="22" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="{Binding KeyName}" FontSize="15" FontWeight="Bold" Margin="0,6,0,0"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Mnemonic}" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        <TextBlock Text="主要字根" FontSize="11" Margin="0,6,0,2"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding Roots}" FontSize="13" TextWrapping="Wrap" LineHeight="1.5"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                    </StackPanel>
+                    <!-- 朗读该键的字根口诀 -->
+                    <Button Grid.Column="2" Style="{StaticResource SpeakIconButton}"
+                            VerticalAlignment="Top" Margin="8,0,0,0"
+                            ToolTip="朗读该键的字根口诀"
+                            Tag="{Binding}"
+                            Click="SpeakWubiCard_Click"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- 拼音胶囊：点击即可朗读该拼音（读呼读音，不是字母名） -->
+        <Style x:Key="PinyinChipButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="ToolTip" Value="点击朗读"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChipBorder" CornerRadius="10" Padding="12,6"
+                                Background="#80FFFFFF"
+                                BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{TemplateBinding Content}" FontSize="14" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource GlassTextBrush}"/>
+                                <materialDesign:PackIcon Kind="VolumeHigh" Width="13" Height="13" Margin="6,0,0,0"
+                                                         VerticalAlignment="Center" Opacity="0.45"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChipBorder" Property="Background" Value="#CCFFFFFF"/>
+                                <Setter TargetName="ChipBorder" Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ChipBorder" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="PinyinChipTemplate">
+            <Button Style="{StaticResource PinyinChipButton}"
+                    Content="{Binding}"
+                    Tag="{Binding}"
+                    Click="SpeakPinyinChip_Click"/>
+        </DataTemplate>
+
+        <!-- 列表小贴士：右侧带朗读按钮，点击朗读该条原文 -->
+        <DataTemplate x:Key="TipTextTemplate">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding}" FontSize="12.5" TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                <Button Grid.Column="1" Style="{StaticResource SpeakIconButton}"
+                        Width="26" Height="26" Margin="8,0,0,0"
+                        VerticalAlignment="Top"
+                        ToolTip="朗读这一条"
+                        Tag="{Binding}"
+                        Click="SpeakTip_Click"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{StaticResource GlassScrollViewer}">
+        <StackPanel Margin="4">
+
+            <!-- ========== 头部横幅 ========== -->
+            <materialDesign:Card Margin="0,0,0,12" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="学习园地" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource GlassTextBrush}"/>
+                    <TextBlock Text="五笔字根表与口诀、拼音声韵母与拼读规则，练习前先来这里打打基础"
+                               FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                    <!-- 朗读不可用提示：系统缺少中文语音包时显示 -->
+                    <Border x:Name="SpeechHintBar" Visibility="Collapsed" HorizontalAlignment="Left"
+                            Margin="0,10,0,0" Padding="10,6" CornerRadius="8"
+                            Background="#33FFA726" BorderBrush="#66FFA726" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="AlertCircleOutline" Width="15" Height="15"
+                                                     VerticalAlignment="Center" Foreground="#EF6C00"/>
+                            <TextBlock x:Name="SpeechHintText" FontSize="12" Margin="6,0,0,0"
+                                       TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="#EF6C00"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- ========== 页签 ========== -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <RadioButton x:Name="TabWubi" Style="{StaticResource LearnTabButton}" GroupName="LearnTabs"
+                             IsChecked="True" Content="五笔字根与口诀"/>
+                <RadioButton x:Name="TabPinyin" Style="{StaticResource LearnTabButton}" GroupName="LearnTabs"
+                             Content="拼音声韵母"/>
+                <RadioButton x:Name="TabFinger" Style="{StaticResource LearnTabButton}" GroupName="LearnTabs"
+                             Content="打字指法"/>
+            </StackPanel>
+
+            <!-- ========== 五笔字根页 ========== -->
+            <StackPanel Visibility="{Binding IsChecked, ElementName=TabWubi, Converter={StaticResource BoolToVisConverter}}">
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <materialDesign:PackIcon Kind="KeyboardVariant" Width="20" Height="20"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="五笔字型 86 版 · 字根助记口诀" FontSize="15" FontWeight="Bold"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                        </StackPanel>
+                        <TextBlock x:Name="WubiIntroText" FontSize="12.5" TextWrapping="Wrap" LineHeight="1.6"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- 键位分区标题 + 朗读入口 -->
+                <Grid Margin="4,0,4,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="横区（1 区 · 横起笔）G F D S A    竖区（2 区 · 竖起笔）H J K L M    撇区（3 区 · 撇起笔）T R E W Q    捺区（4 区 · 捺起笔）Y U I O P    折区（5 区 · 折起笔）N B V C X"
+                               FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"
+                               Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                        <Button Style="{StaticResource SpeakAllButton}" Margin="0"
+                                ToolTip="朗读五笔字型分区说明" Click="SpeakWubiIntro_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="VolumeHigh" Width="14" Height="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="朗读说明" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SpeakAllButton}"
+                                ToolTip="依次朗读 25 个键位的字根口诀" Click="SpeakAllWubi_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Bullhorn" Width="14" Height="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="朗读全部口诀" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 25 个键位卡片（由代码后台注入字根数据） -->
+                <ItemsControl x:Name="WubiRootsList" ItemsSource="{Binding}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <StaticResource ResourceKey="WubiRootCardTemplate"/>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ========== 拼音声韵母页 ========== -->
+            <StackPanel Visibility="{Binding IsChecked, ElementName=TabPinyin, Converter={StaticResource BoolToVisConverter}}">
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AlphabetLatin" Width="20" Height="20"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="声母表（23 个）" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0"
+                                           Foreground="{DynamicResource GlassTextBrush}"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SpeakAllButton}" Margin="10,0,0,0"
+                                    ToolTip="按呼读音依次朗读 23 个声母" Click="SpeakAllInitials_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Bullhorn" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="朗读全部" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="提示：点击任意拼音可单独朗读；朗读使用汉语拼音教学的标准「呼读音」，不是英文字母读法。"
+                                   FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,6"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                        <ItemsControl ItemsSource="{Binding}" x:Name="InitialsList" ItemTemplate="{StaticResource PinyinChipTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- 韵母分组（由代码后台注入：单韵母 / 复韵母 / 前后鼻韵母） -->
+                <ItemsControl x:Name="FinalGroupsList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Group}" FontSize="15" FontWeight="Bold"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                                        <Button Grid.Column="1" Style="{StaticResource SpeakAllButton}" Margin="0"
+                                                ToolTip="朗读本组韵母" Tag="{Binding Finals}"
+                                                Click="SpeakFinalGroup_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="VolumeHigh" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="朗读" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Finals}" ItemTemplate="{StaticResource PinyinChipTemplate}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="整体认读音节（16 个）" FontSize="15" FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <Button Grid.Column="1" Style="{StaticResource SpeakAllButton}" Margin="0"
+                                    ToolTip="整体认读音节要求整体记认，这里逐个朗读" Click="SpeakAllWholeSyllables_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Bullhorn" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="朗读全部" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding}" x:Name="WholeSyllablesList" ItemTemplate="{StaticResource PinyinChipTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="声调与标调规则" FontSize="15" FontWeight="Bold" Margin="0,0,0,6"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <ItemsControl ItemsSource="{Binding}" x:Name="ToneTipsList" ItemTemplate="{StaticResource TipTextTemplate}"/>
+                        <TextBlock Text="拼读小贴士" FontSize="15" FontWeight="Bold" Margin="0,10,0,6"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <ItemsControl ItemsSource="{Binding}" x:Name="SpellingTipsList" ItemTemplate="{StaticResource TipTextTemplate}"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </StackPanel>
+
+            <!-- ========== 打字指法页 ========== -->
+            <StackPanel Visibility="{Binding IsChecked, ElementName=TabFinger, Converter={StaticResource BoolToVisConverter}}">
+                <materialDesign:Card Padding="16,12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <materialDesign:PackIcon Kind="HandBackLeft" Width="20" Height="20"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="基准键位" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="8,0,0,0"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                        </StackPanel>
+
+                        <!-- 基准键位示意 -->
+                        <Border HorizontalAlignment="Center" Margin="0,4,0,10" CornerRadius="12" Padding="16,12"
+                                Background="#80FFFFFF" BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1">
+                            <StackPanel HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                    <TextBlock Text="左手小指→无名指→中指→食指" FontSize="11.5" VerticalAlignment="Center" Margin="0,0,10,0"
+                                               Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="A"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="S"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="D"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="F"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}" Background="{DynamicResource PrimaryHueMidBrush}"><TextBlock Text="空格" Foreground="White"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="J"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="K"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="L"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text=";"/></Border>
+                                    <TextBlock Text="←右手食指→中指→无名指→小指" FontSize="11.5" VerticalAlignment="Center" Margin="10,0,0,0"
+                                               Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="F 键与 J 键上有凸起的小横杠，不用看键盘，双手食指摸到它们就找到了基准位置"
+                                           FontSize="12" HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="指法要领" FontSize="15" FontWeight="Bold" Margin="0,4,0,6"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <ItemsControl ItemsSource="{Binding}" x:Name="FingerTipsList" ItemTemplate="{StaticResource TipTextTemplate}"/>
+                    </StackPanel>
+                </materialDesign:Card>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

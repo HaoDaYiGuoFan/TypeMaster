@@ -1,0 +1,33 @@
+<UserControl x:Class="TypeMaster.App.Views.UserControls.GlassTitleBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" d:DesignHeight="40" d:DesignWidth="480">
+    <!-- macOS 风格玻璃标题栏：左侧交通灯关闭按钮 + 居中标题 + 空白区可拖动 -->
+    <Border Background="{DynamicResource GlassTopBarBrush}"
+            BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="0,0,0,1"
+            Height="40" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Style="{StaticResource MacWindowButton}" Background="#FF5F57"
+                    Margin="14,0,0,0" Content="&#xE8BB;" ToolTip="关闭" Click="CloseWindow"/>
+
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                       HorizontalAlignment="Center" Margin="0,0,40,0"
+                       Foreground="{DynamicResource GlassTextBrush}"/>
+
+            <materialDesign:PackIcon Grid.Column="2" Kind="{Binding IconKind, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     Width="18" Height="18" Margin="0,0,14,0" VerticalAlignment="Center"
+                                     Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+        </Grid>
+    </Border>
+</UserControl>

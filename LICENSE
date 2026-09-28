@@ -1,0 +1,41 @@
+MIT License
+
+Copyright (c) 2026 HTY
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## 第三方素材授权说明 / Third-Party Notices
+
+本项目的游戏词库词表来源于 google-10000-english
+(https://github.com/first20hours/google-10000-english)，
+该词表派生自 Google Web Trillion Word Corpus。
+
+该词表原始 LICENSE 声明：
+  "Educational and personal/research use of this data is permitted under the
+   LDC license, Norvig's MIT license for his contributions, and US fair use
+   doctrine. I do not recommend using this data for commercial purposes
+   without licensing it from the Linguistic Data Consortium."
+
+即：个人 / 教育 / 研究用途可用，商业用途需另行向 Linguistic Data Consortium
+(https://www.ldc.upenn.edu/) 取得授权。
+
+若你计划商业分发本项目，需自行处理该词表的授权，
+或替换 src/TypeMaster.Services/GameWords.cs 中的词表内容。

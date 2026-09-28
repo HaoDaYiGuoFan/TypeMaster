@@ -1,0 +1,665 @@
+<UserControl x:Class="TypeMaster.App.Views.Pages.GamePlayPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:core="clr-namespace:TypeMaster.Core.Enums;assembly=TypeMaster.Core"
+             xmlns:uc="clr-namespace:TypeMaster.App.Views.UserControls"
+             xmlns:conv="clr-namespace:TypeMaster.App.Converters"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <conv:GameGlyphToPackIconKindConverter x:Key="GlyphToIcon"/>
+        <conv:GameGlyphToSpriteConverter x:Key="GlyphToSprite"/>
+        <conv:GameModeEqualsToVisibilityConverter x:Key="ModeVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 顶部：标题 / 难度 / 状态 / 分数 -->
+        <materialDesign:Card Grid.Row="0" Padding="12" Margin="0,0,0,10">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="Bold"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <TextBlock Text="{Binding Description}" FontSize="12"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"
+                                   TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="简单" Tag="{x:Static core:Difficulty.Easy}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Easy}"/>
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="普通" Tag="{x:Static core:Difficulty.Normal}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Normal}"/>
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="困难" Tag="{x:Static core:Difficulty.Hard}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hard}"/>
+
+                        <!-- 折叠箭头：点击展开 1~10 级难度细分滑动条，低分屏下默认收起 -->
+                        <ToggleButton x:Name="DifficultyExpander" Style="{StaticResource MaterialDesignFlatButton}"
+                                      Width="28" Height="28" Padding="0" Margin="4,3,0,3"
+                                      ToolTip="展开 / 收起难度细分（1~10 级）">
+                            <materialDesign:PackIcon Width="18" Height="18">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="ChevronDown"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=DifficultyExpander}" Value="True">
+                                                <Setter Property="Kind" Value="ChevronUp"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </ToggleButton>
+
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}" Margin="6,3,3,3" Content="开始"
+                                Command="{Binding StartCommand}" Click="RefocusInput"/>
+                        <Button Style="{StaticResource MaterialDesignOutlinedButton}" Margin="3" Content="返回"
+                                Command="{Binding BackCommand}" Click="RefocusInput"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource PrimaryHueMidBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock Text="   得分 " VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Score}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock Text="   生命 " VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Lives}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock Text="   连击 " VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ComboText" Text="{Binding Combo}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- 难度细分：1~10 级滑动条，与三档按钮双向联动（下一局生效，默认折叠） -->
+                <Border Margin="0,10,0,0" Padding="10,8" CornerRadius="10"
+                        Background="{DynamicResource GlassSurfaceStrongBrush}"
+                        BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1"
+                        Visibility="{Binding IsChecked, ElementName=DifficultyExpander, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="难度细分：" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
+                        <Slider Width="220" Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                TickPlacement="BottomRight" VerticalAlignment="Center" SmallChange="1" LargeChange="1"
+                                Value="{Binding DifficultyLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Style="{StaticResource MaterialDesignDiscreteSlider}"/>
+                        <TextBlock Text="{Binding DifficultyLevelText}" VerticalAlignment="Center" FontSize="13"
+                                   FontWeight="SemiBold" Margin="14,0,0,0"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <!-- 游戏区：背景装饰贴图 + Canvas 活动目标 + 结束遮罩 -->
+        <Border x:Name="PlayArea" Grid.Row="1" Margin="0,0,0,10"
+                Background="{DynamicResource MaterialDesignCardBackground}"
+                BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1"
+                CornerRadius="8" ClipToBounds="True">
+            <Grid>
+            <!-- ========== 卡通场景背景：按模式显示，纯矢量 + 轻量动画，不拦截点击 ========== -->
+
+            <!-- 打气球：蓝天白云 + 底部屋顶烟囱 + 悠闲飘浮的装饰气球 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=BalloonPop}" IsHitTestVisible="False">
+                <Rectangle Fill="{DynamicResource CartoonSkyDay}"/>
+                <Rectangle VerticalAlignment="Bottom" Height="86" Fill="{DynamicResource CartoonGround}"/>
+                <Canvas HorizontalAlignment="Left" VerticalAlignment="Top" Margin="110,50,0,0">
+                    <Canvas.RenderTransform><TranslateTransform/></Canvas.RenderTransform>
+                    <Canvas.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="0" To="36" Duration="0:0:8" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Canvas.Triggers>
+                    <Ellipse Canvas.Left="0" Canvas.Top="8" Width="48" Height="26" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="22" Canvas.Top="0" Width="34" Height="24" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="42" Canvas.Top="10" Width="30" Height="20" Fill="{DynamicResource CartoonCloud}"/>
+                </Canvas>
+                <Canvas HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,80,150,0">
+                    <Canvas.RenderTransform><TranslateTransform/></Canvas.RenderTransform>
+                    <Canvas.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="0" To="-30" Duration="0:0:10" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Canvas.Triggers>
+                    <Ellipse Canvas.Left="0" Canvas.Top="6" Width="40" Height="22" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="18" Canvas.Top="0" Width="30" Height="20" Fill="{DynamicResource CartoonCloud}"/>
+                </Canvas>
+                <!-- 房顶与烟囱：气球从屋后升起 -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="30,0,0,58">
+                    <Rectangle Width="130" Height="56" Fill="{DynamicResource CartoonBuilding}" RadiusX="4" RadiusY="4"/>
+                    <Rectangle Width="16" Height="30" Fill="{DynamicResource CartoonBuilding}" Margin="12,0,0,-58"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,60,58">
+                    <Rectangle Width="100" Height="44" Fill="{DynamicResource CartoonBuilding}" RadiusX="4" RadiusY="4"/>
+                </StackPanel>
+                <!-- 装饰气球：缓慢上下浮动 -->
+                <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,120,90,0">
+                    <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-12" Duration="0:0:2.6" AutoReverse="True" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <materialDesign:PackIcon Kind="Balloon" Width="34" Height="34" Foreground="#EC407A" HorizontalAlignment="Left"/>
+                    <materialDesign:PackIcon Kind="Balloon" Width="30" Height="30" Foreground="{DynamicResource FestiveAmber}" Margin="26,10,0,0"/>
+                    <materialDesign:PackIcon Kind="Balloon" Width="26" Height="26" Foreground="{DynamicResource FestiveBlue}" Margin="50,2,0,0"/>
+                </Grid>
+            </Grid>
+
+            <!-- 生死时速：环形跑道 + 终点旗 + 两侧看台；选手位置由代码后台驱动 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=LifeDeathSpeed}" IsHitTestVisible="False">
+                <Rectangle Fill="#E8F5E9"/>
+                <Rectangle VerticalAlignment="Top" Height="72" Fill="{DynamicResource CartoonGround}"/>
+                <Rectangle VerticalAlignment="Bottom" Height="72" Fill="{DynamicResource CartoonGround}"/>
+                <!-- 跑道 -->
+                <Border VerticalAlignment="Center" Height="150" Background="#FFCC80" BorderBrush="#FFF3E0" BorderThickness="0,6,0,6">
+                    <StackPanel VerticalAlignment="Center" Orientation="Vertical">
+                        <Rectangle Height="2" Margin="0,18" Fill="#80FFFFFF" StrokeDashArray="4 4" Stroke="#66FFFFFF" StrokeThickness="2"/>
+                        <Rectangle Height="2" Margin="0,0" Fill="#80FFFFFF" StrokeDashArray="4 4" Stroke="#66FFFFFF" StrokeThickness="2"/>
+                    </StackPanel>
+                </Border>
+                <!-- 终点旗（格纹） -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0">
+                    <UniformGrid Rows="4" Columns="3" Width="42" Height="56">
+                        <Rectangle Fill="#37474F"/><Rectangle Fill="White"/><Rectangle Fill="#37474F"/>
+                        <Rectangle Fill="White"/><Rectangle Fill="#37474F"/><Rectangle Fill="White"/>
+                        <Rectangle Fill="#37474F"/><Rectangle Fill="White"/><Rectangle Fill="#37474F"/>
+                        <Rectangle Fill="White"/><Rectangle Fill="#37474F"/><Rectangle Fill="White"/>
+                    </UniformGrid>
+                    <Rectangle Width="4" Height="150" Fill="#5D4037"/>
+                </StackPanel>
+                <!-- 电脑选手（紫色）：奔跑感 = 上下颠动 + 前倾摆动 -->
+                <Grid x:Name="RivalRunner" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,46" Width="76" Height="76"
+                      RenderTransformOrigin="0.5,0.8">
+                    <Grid.RenderTransform>
+                        <TransformGroup>
+                            <!-- 位置由代码后台按引擎进度驱动 -->
+                            <TranslateTransform/>
+                            <!-- 奔跑颠动 -->
+                            <TranslateTransform x:Name="RivalBob" Y="0"/>
+                            <!-- 身体前倾摆动（以脚为轴） -->
+                            <RotateTransform x:Name="RivalTilt" Angle="0"/>
+                        </TransformGroup>
+                    </Grid.RenderTransform>
+                    <Image Source="pack://application:,,,/TypeMaster;component/Assets/Sprites/runner_rival.png"
+                           Width="66" Height="66" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 上下颠动：模拟脚步交替带来的重心起伏 -->
+                                        <DoubleAnimation Storyboard.TargetName="RivalBob" Storyboard.TargetProperty="Y"
+                                                         From="0" To="-5" Duration="0:0:0.29"
+                                                         AutoReverse="True" RepeatBehavior="Forever">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <!-- 前倾摆动：奔跑姿态的左右重心切换 -->
+                                        <DoubleAnimation Storyboard.TargetName="RivalTilt" Storyboard.TargetProperty="Angle"
+                                                         From="-7" To="7" Duration="0:0:0.29"
+                                                         AutoReverse="True" RepeatBehavior="Forever">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Image.Triggers>
+                    </Image>
+                </Grid>
+                <!-- 玩家选手（蓝色）：与电脑选手同款动效，节奏略不同以免完全同步显得机械 -->
+                <Grid x:Name="PlayerRunner" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,46,0,0" Width="76" Height="76"
+                      RenderTransformOrigin="0.5,0.8">
+                    <Grid.RenderTransform>
+                        <TransformGroup>
+                            <TranslateTransform/>
+                            <TranslateTransform x:Name="PlayerBob" Y="0"/>
+                            <RotateTransform x:Name="PlayerTilt" Angle="0"/>
+                        </TransformGroup>
+                    </Grid.RenderTransform>
+                    <Image Source="pack://application:,,,/TypeMaster;component/Assets/Sprites/runner.png"
+                           Width="66" Height="66" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PlayerBob" Storyboard.TargetProperty="Y"
+                                                         From="0" To="-5" Duration="0:0:0.26"
+                                                         AutoReverse="True" RepeatBehavior="Forever">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="PlayerTilt" Storyboard.TargetProperty="Angle"
+                                                         From="-7" To="7" Duration="0:0:0.26"
+                                                         AutoReverse="True" RepeatBehavior="Forever">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Image.Triggers>
+                    </Image>
+                </Grid>
+            </Grid>
+
+            <!-- 太空大战：深蓝星空 + 闪烁星星 + 发光星球 + 浮动火箭 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=SpaceWar}" IsHitTestVisible="False">
+                <Rectangle Fill="{DynamicResource CartoonSkySpace}"/>
+                <Ellipse Width="5" Height="5" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="90,70,0,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.4" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="4" Height="4" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="240,150,0,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.8" BeginTime="0:0:0.3" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="6" Height="6" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="380,80,0,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.6" BeginTime="0:0:0.6" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="4" Height="4" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,120,260,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.5" BeginTime="0:0:0.9" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="5" Height="5" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,220,150,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.7" BeginTime="0:0:0.4" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,30,20" Width="180" Height="180">
+                    <Ellipse Width="180" Height="180" Fill="{DynamicResource CartoonPlanet}" Opacity="0.25">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.18" To="0.42" Duration="0:0:3" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <Ellipse Width="92" Height="92" Fill="{DynamicResource CartoonPlanet}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Ellipse Width="30" Height="30" Fill="{DynamicResource CartoonStar}" Opacity="0.55" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,18,0,0"/>
+                </Grid>
+                <materialDesign:PackIcon Kind="Rocket" Width="40" Height="40" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,40">
+                    <materialDesign:PackIcon.RenderTransform><TranslateTransform/></materialDesign:PackIcon.RenderTransform>
+                    <materialDesign:PackIcon.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-16" Duration="0:0:2" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></materialDesign:PackIcon.Triggers>
+                </materialDesign:PackIcon>
+
+                <!-- 我方小飞船：底部左右巡航 + 上下轻浮 + 尾焰跳动 -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,6" Width="130" Height="100">
+                    <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                         From="-110" To="110" Duration="0:0:6.5" AutoReverse="True" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                         From="0" To="-7" Duration="0:0:2.2" AutoReverse="True" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <Ellipse Width="24" Height="18" Fill="{DynamicResource FestiveAmber}" Opacity="0.9"
+                             HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Height" From="18" To="30" Duration="0:0:0.28" AutoReverse="True" RepeatBehavior="Forever"/>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.9" To="0.5" Duration="0:0:0.28" AutoReverse="True" RepeatBehavior="Forever"/>
+                        </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <materialDesign:PackIcon Kind="RocketLaunch" Width="54" Height="54" Foreground="White"
+                                             HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                </Grid>
+            </Grid>
+
+            <!-- 打地鼠：蓝天草地 + 漂移云 + 旋转太阳 + 地鼠洞 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=WhackMole}" IsHitTestVisible="False">
+                <Rectangle Fill="{DynamicResource CartoonSkyDay}"/>
+                <Rectangle VerticalAlignment="Bottom" Height="120" Fill="{DynamicResource CartoonGround}"/>
+                <Canvas HorizontalAlignment="Left" VerticalAlignment="Top" Margin="120,46,0,0">
+                    <Canvas.RenderTransform><TranslateTransform/></Canvas.RenderTransform>
+                    <Canvas.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="0" To="34" Duration="0:0:7" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Canvas.Triggers>
+                    <Ellipse Canvas.Left="0" Canvas.Top="8" Width="46" Height="26" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="20" Canvas.Top="0" Width="34" Height="24" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="40" Canvas.Top="10" Width="30" Height="20" Fill="{DynamicResource CartoonCloud}"/>
+                </Canvas>
+                <Canvas HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,90,180,0">
+                    <Canvas.RenderTransform><TranslateTransform/></Canvas.RenderTransform>
+                    <Canvas.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="0" To="-28" Duration="0:0:9" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Canvas.Triggers>
+                    <Ellipse Canvas.Left="0" Canvas.Top="6" Width="38" Height="22" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="18" Canvas.Top="0" Width="28" Height="20" Fill="{DynamicResource CartoonCloud}"/>
+                </Canvas>
+                <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,26,70,0" Width="92" Height="92">
+                    <Grid.RenderTransform><RotateTransform Angle="0"/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:24" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <Rectangle Width="6" Height="92" Fill="{DynamicResource CartoonSunRay}" HorizontalAlignment="Center" VerticalAlignment="Center" RadiusX="3" RadiusY="3"/>
+                    <Rectangle Width="92" Height="6" Fill="{DynamicResource CartoonSunRay}" HorizontalAlignment="Center" VerticalAlignment="Center" RadiusX="3" RadiusY="3"/>
+                    <Rectangle Width="6" Height="92" Fill="{DynamicResource CartoonSunRay}" HorizontalAlignment="Center" VerticalAlignment="Center" RadiusX="3" RadiusY="3"><Rectangle.RenderTransform><RotateTransform Angle="45"/></Rectangle.RenderTransform></Rectangle>
+                    <Rectangle Width="92" Height="6" Fill="{DynamicResource CartoonSunRay}" HorizontalAlignment="Center" VerticalAlignment="Center" RadiusX="3" RadiusY="3"><Rectangle.RenderTransform><RotateTransform Angle="45"/></Rectangle.RenderTransform></Rectangle>
+                    <Ellipse Width="48" Height="48" Fill="{DynamicResource CartoonSun}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <Ellipse Width="78" Height="26" Fill="{DynamicResource CartoonHole}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="110,0,0,46"/>
+                <Ellipse Width="78" Height="26" Fill="{DynamicResource CartoonHole}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,46"/>
+                <Ellipse Width="78" Height="26" Fill="{DynamicResource CartoonHole}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,110,46"/>
+
+                <!-- 地鼠吉祥物：在洞口反复探头（先蹲后跳，带一点左右摇摆） -->
+                <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="96,0,0,40" Width="80" Height="86">
+                    <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                         From="44" To="0" Duration="0:0:0.45" AutoReverse="True" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <materialDesign:PackIcon Kind="Rodent" Width="52" Height="52" Foreground="#795548"
+                                             HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8">
+                        <materialDesign:PackIcon.RenderTransform><RotateTransform/></materialDesign:PackIcon.RenderTransform>
+                        <materialDesign:PackIcon.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                             From="-8" To="8" Duration="0:0:0.9" AutoReverse="True" RepeatBehavior="Forever"/>
+                        </Storyboard></BeginStoryboard></EventTrigger></materialDesign:PackIcon.Triggers>
+                    </materialDesign:PackIcon>
+                </Grid>
+            </Grid>
+
+            <!-- 抓小偷：城市夜空 + 月亮 + 闪烁星 + 卡通天际线 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=CatchThief}" IsHitTestVisible="False">
+                <Rectangle Fill="{DynamicResource CartoonSkyCity}"/>
+                <materialDesign:PackIcon Kind="MoonAndStars" Width="46" Height="46" Foreground="{DynamicResource CartoonMoon}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,30,70,0"/>
+                <Ellipse Width="4" Height="4" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="120,60,0,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.5" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="5" Height="5" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="300,120,0,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.7" BeginTime="0:0:0.4" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="4" Height="4" Fill="{DynamicResource CartoonStar}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,90,200,0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.6" BeginTime="0:0:0.8" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                    <Rectangle Width="46" Height="150" Fill="{DynamicResource CartoonBuilding}" Margin="3,0"/>
+                    <Rectangle Width="46" Height="104" Fill="{DynamicResource CartoonBuilding}" Margin="3,0"/>
+                    <Rectangle Width="46" Height="184" Fill="{DynamicResource CartoonBuilding}" Margin="3,0"/>
+                    <Rectangle Width="46" Height="128" Fill="{DynamicResource CartoonBuilding}" Margin="3,0"/>
+                    <Rectangle Width="46" Height="162" Fill="{DynamicResource CartoonBuilding}" Margin="3,0"/>
+                </StackPanel>
+
+                <!-- 楼房窗户：错峰闪烁的暖黄灯光 -->
+                <Rectangle Width="11" Height="13" Fill="{DynamicResource CartoonBuildingLit}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,150,110">
+                    <Rectangle.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:1.8" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Rectangle.Triggers>
+                </Rectangle>
+                <Rectangle Width="11" Height="13" Fill="{DynamicResource CartoonBuildingLit}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,50,150">
+                    <Rectangle.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.2" Duration="0:0:2.4" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Rectangle.Triggers>
+                </Rectangle>
+                <Rectangle Width="11" Height="13" Fill="{DynamicResource CartoonBuildingLit}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,150,0,80">
+                    <Rectangle.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.25" To="1" Duration="0:0:2.1" BeginTime="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Rectangle.Triggers>
+                </Rectangle>
+
+                <!-- 警察叔叔：沿街道来回奔跑追小偷，身体上下颠动 -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,2" Width="80" Height="86">
+                    <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                         From="-140" To="140" Duration="0:0:7" AutoReverse="True" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                         From="0" To="-5" Duration="0:0:0.32" AutoReverse="True" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <Image Source="pack://application:,,,/TypeMaster;component/Assets/Sprites/runner.png"
+                           Width="54" Height="54" Opacity="0.9"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <materialDesign:PackIcon Kind="RunFast" Width="0" Height="0" Visibility="Collapsed" Foreground="#ECEFF1"
+                                             HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,6,4"/>
+                    <materialDesign:PackIcon Kind="PoliceBadge" Width="24" Height="24" Foreground="{DynamicResource CartoonSun}"
+                                             HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,4,44"/>
+                </Grid>
+            </Grid>
+
+            <!-- 青蛙吃虫：池塘 + 漂移云 + 浮动荷叶 + 跳动小虫 -->
+            <Grid Visibility="{Binding Mode, Converter={StaticResource ModeVis}, ConverterParameter=FrogBug}" IsHitTestVisible="False">
+                <Rectangle Fill="{DynamicResource CartoonPond}"/>
+                <Rectangle VerticalAlignment="Bottom" Height="64" Fill="{DynamicResource CartoonGrassDark}" Opacity="0.5"/>
+                <Canvas HorizontalAlignment="Left" VerticalAlignment="Top" Margin="150,60,0,0">
+                    <Canvas.RenderTransform><TranslateTransform/></Canvas.RenderTransform>
+                    <Canvas.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="0" To="30" Duration="0:0:8" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Canvas.Triggers>
+                    <Ellipse Canvas.Left="0" Canvas.Top="6" Width="40" Height="22" Fill="{DynamicResource CartoonCloud}"/>
+                    <Ellipse Canvas.Left="18" Canvas.Top="0" Width="28" Height="20" Fill="{DynamicResource CartoonCloud}"/>
+                </Canvas>
+                <Ellipse Width="86" Height="34" Fill="{DynamicResource CartoonLeaf}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="90,0,0,80">
+                    <Ellipse.RenderTransform><TranslateTransform/></Ellipse.RenderTransform>
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:3" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="74" Height="30" Fill="{DynamicResource CartoonLeaf}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,96">
+                    <Ellipse.RenderTransform><TranslateTransform/></Ellipse.RenderTransform>
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:3.4" BeginTime="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="80" Height="32" Fill="{DynamicResource CartoonLeaf}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,90,84">
+                    <Ellipse.RenderTransform><TranslateTransform/></Ellipse.RenderTransform>
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:3.2" BeginTime="0:0:1" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <materialDesign:PackIcon Kind="Spider" Width="30" Height="30" Foreground="{DynamicResource CartoonGrassDark}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,104">
+                    <materialDesign:PackIcon.RenderTransform><TranslateTransform/></materialDesign:PackIcon.RenderTransform>
+                    <materialDesign:PackIcon.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="0" To="-6" Duration="0:0:2.4" AutoReverse="True" RepeatBehavior="Forever"/></Storyboard></BeginStoryboard></EventTrigger></materialDesign:PackIcon.Triggers>
+                </materialDesign:PackIcon>
+
+                <!-- 池塘涟漪：两圈同心波纹错峰扩散 -->
+                <Ellipse Width="50" Height="16" Stroke="#BFFFFFFF" StrokeThickness="2" Fill="Transparent"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,120" Opacity="0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Width" From="50" To="200" Duration="0:0:3.4" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="Height" From="16" To="64" Duration="0:0:3.4" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.65" To="0" Duration="0:0:3.4" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Width="50" Height="16" Stroke="#BFFFFFFF" StrokeThickness="2" Fill="Transparent"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,120" Opacity="0">
+                    <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Width" From="50" To="200" Duration="0:0:3.4" BeginTime="0:0:1.7" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="Height" From="16" To="64" Duration="0:0:3.4" BeginTime="0:0:1.7" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.65" To="0" Duration="0:0:3.4" BeginTime="0:0:1.7" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                </Ellipse>
+
+                <!-- 青蛙守门员：中线待命，呼吸缩放 + 眨眼睛 -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,16" Width="120" Height="92">
+                    <Grid.RenderTransform><ScaleTransform/></Grid.RenderTransform>
+                    <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1" To="1.07" Duration="0:0:1.6" AutoReverse="True" RepeatBehavior="Forever"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="1" To="1.07" Duration="0:0:1.6" AutoReverse="True" RepeatBehavior="Forever"/>
+                    </Storyboard></BeginStoryboard></EventTrigger></Grid.Triggers>
+                    <Ellipse Width="92" Height="54" Fill="{DynamicResource CartoonLeaf}" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                    <Ellipse Width="62" Height="40" Fill="#57B85E" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,34"/>
+                    <Ellipse Width="26" Height="26" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,26,0">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Height" RepeatBehavior="Forever">
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="26"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.6" Value="3"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.75" Value="26"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <Ellipse Width="26" Height="26" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="26,8,0,0">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Height" RepeatBehavior="Forever">
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="26"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.6" Value="3"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.75" Value="26"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <Ellipse Width="11" Height="11" Fill="#212121" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,18,26,0">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.6" Value="0"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.75" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <Ellipse Width="11" Height="11" Fill="#212121" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="26,18,0,0">
+                        <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.6" Value="0"/>
+                                <DiscreteDoubleKeyFrame KeyTime="0:0:2.75" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
+                    </Ellipse>
+                    <Rectangle Width="30" Height="6" RadiusX="3" RadiusY="3" Fill="#2E7D32"
+                               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,42,0,0"/>
+                </Grid>
+            </Grid>
+
+                <!-- 拖尾层：跟随移动目标绘制渐隐光点（位于目标下方，不拦截点击） -->
+                <Canvas x:Name="TrailCanvas" IsHitTestVisible="False" Panel.ZIndex="1"/>
+
+                <ItemsControl ItemsSource="{Binding Targets}" Panel.ZIndex="2">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="130" UseLayoutRounding="True" SnapsToDevicePixels="True"
+                                  RenderTransformOrigin="0.5,0.9">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <!-- 缩放入场（挤压回弹）；原点在底部中央，像"跳出来" -->
+                                        <ScaleTransform x:Name="CharScale" ScaleX="1" ScaleY="1"/>
+                                        <!-- 待机浮动（只作用于渲染，不影响 Canvas 定位） -->
+                                        <TranslateTransform x:Name="CharBob" Y="0"/>
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
+                                <Grid.CacheMode>
+                                    <BitmapCache RenderAtScale="1"/>
+                                </Grid.CacheMode>
+                                <!-- 锁定高亮环 -->
+                                <Border x:Name="LockRing" Visibility="Collapsed" Margin="2"
+                                        BorderBrush="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.AccentBrush}"
+                                        BorderThickness="3" CornerRadius="16" Background="Transparent"/>
+                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <!-- 卡通角色精灵（替代表情包式单色图标） -->
+                                    <Image x:Name="CharImage"
+                                           Source="{Binding Glyph, Converter={StaticResource GlyphToSprite}}"
+                                           Width="72" Height="72" HorizontalAlignment="Center"
+                                           Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <Border CornerRadius="8" Padding="8,4" Margin="0,5,0,0" HorizontalAlignment="Center"
+                                            Background="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.AccentBrush}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding MatchedSubstring}" Foreground="White" FontWeight="Bold"/>
+                                            <TextBlock Text="{Binding RemainingSubstring}" Foreground="White"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <!-- 出场动画：从小放大并轻微回弹，避免"突然出现" -->
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="CharScale" Storyboard.TargetProperty="ScaleX"
+                                                             From="0.35" To="1.0" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase Amplitude="0.55" EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="CharScale" Storyboard.TargetProperty="ScaleY"
+                                                             From="0.35" To="1.0" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase Amplitude="0.55" EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <!-- 待机浮动：缓慢上下呼吸，让画面不死板 -->
+                                            <DoubleAnimation Storyboard.TargetName="CharBob" Storyboard.TargetProperty="Y"
+                                                             From="0" To="-6" Duration="0:0:1.1"
+                                                             AutoReverse="True" RepeatBehavior="Forever">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <SineEase EasingMode="EaseInOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                    <Setter TargetName="LockRing" Property="Visibility" Value="Visible"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="LockPulse">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="LockRing" Storyboard.TargetProperty="Opacity"
+                                                                 From="1" To="0.35" Duration="0:0:0.6" AutoReverse="True" RepeatBehavior="Forever"/>
+                                                <!-- 被锁定时角色轻轻放大，强化"已被锁定"的反馈 -->
+                                                <DoubleAnimation Storyboard.TargetName="CharScale" Storyboard.TargetProperty="ScaleX"
+                                                                 From="1.0" To="1.14" Duration="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/>
+                                                <DoubleAnimation Storyboard.TargetName="CharScale" Storyboard.TargetProperty="ScaleY"
+                                                                 From="1.0" To="1.14" Duration="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <StopStoryboard BeginStoryboardName="LockPulse"/>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- 连击火焰层：连击越高火焰越旺（不拦截点击） -->
+                <Canvas x:Name="FlameCanvas" IsHitTestVisible="False" Panel.ZIndex="40"/>
+
+                <!-- 特效层：星爆 / 扩散光环 / 飘字 / 彩屑（不拦截点击） -->
+                <Canvas x:Name="FxCanvas" IsHitTestVisible="False" Panel.ZIndex="50"/>
+
+                <!-- 庆祝闪光层（连击里程碑 / 通关时短暂点亮，不拦截点击） -->
+                <Border x:Name="FlashOverlay" Background="{StaticResource FestiveAmber}" Opacity="0"
+                        IsHitTestVisible="False" Panel.ZIndex="60"/>
+            </Grid>
+        </Border>
+
+        <!-- 底部：输入框 + 虚拟键盘 -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="InputBox" Grid.Column="0" Margin="0,0,12,0" Padding="10"
+                     BorderBrush="{Binding AccentBrush}" BorderThickness="2"
+                     InputMethod.IsInputMethodEnabled="False"
+                     materialDesign:HintAssist.Hint="输入屏幕上单词的首字母锁定目标，继续输入将其消灭"
+                     TextChanged="InputBox_TextChanged" GotFocus="InputBox_GotFocus"/>
+            <uc:VirtualKeyboard x:Name="VkHost" Grid.Column="1"/>
+        </Grid>
+
+        <!-- 趣味提示气泡（置顶，不拦截操作） -->
+        <uc:FunTipHost Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Margin="0,92,0,0" Panel.ZIndex="100" IsHitTestVisible="False"/>
+        <!-- ========== 游戏结束模态层 ==========
+             放在最外层（不在 PlayArea 内），原因有二：
+             1) PlayArea 设了 ClipToBounds，放里面会被游戏区高度裁掉弹框；
+             2) ZIndex 必须高于闪光层(60)与趣味提示(100)，否则弹框会被盖住。 -->
+        <Grid Grid.RowSpan="3" Panel.ZIndex="200" Focusable="False"
+              Visibility="{Binding IsGameOver, Converter={StaticResource BoolToVis}}">
+            <!-- 半透明遮罩：同时挡住底层一切鼠标操作，形成真正的模态 -->
+            <Border Background="#99000000"/>
+            <materialDesign:Card Width="360"
+                                 VerticalAlignment="Center" HorizontalAlignment="Center"
+                                 MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,22">
+                        <materialDesign:PackIcon Kind="Trophy" Width="48" Height="48" HorizontalAlignment="Center"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        <TextBlock Text="游戏结束" FontSize="26" FontWeight="Bold"
+                                   HorizontalAlignment="Center" Margin="0,8,0,6"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,16"/>
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="再来一局" Margin="0,4"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding RestartCommand}" Click="RefocusInput"/>
+                        <Button Style="{StaticResource MaterialDesignFlatButton}" Content="返回游戏厅" Margin="0,8,0,0"
+                                HorizontalAlignment="Stretch"
+                                Background="#E8EAED"
+                                Foreground="{DynamicResource GlassTextBrush}"
+                                Command="{Binding BackCommand}" Click="RefocusInput"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </materialDesign:Card>
+        </Grid>
+
+    </Grid>
+</UserControl>

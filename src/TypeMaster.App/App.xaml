@@ -1,0 +1,116 @@
+<Application x:Class="TypeMaster.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:TypeMaster.App.Converters">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- MDIX 4.x 组合式主题：
+                     1) BundledTheme —— 真正的 ResourceDictionary 子类，程序化生成完整调色板
+                        (PrimaryHue*/SecondaryHue* 等)，是 PaletteHelper 动态切换主题的前提；
+                     2) MaterialDesignTheme.Defaults.xaml —— 经典 MD2 控件样式字典，
+                        提供 MaterialDesignFlatButton / RaisedButton / OutlinedButton /
+                        RaisedDarkButton / DiscreteSlider / LinearProgressBar / CardBackground 等按键引用的键。
+                     BundledTheme 默认走 MD3 样式体系，不含上述经典键，故必须显式叠加 Defaults。 -->
+                <materialDesign:BundledTheme BaseTheme="Light"
+                                            PrimaryColor="Blue"
+                                            SecondaryColor="Teal" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+                <!-- macOS 风格玻璃质感主题：放在最后，确保覆盖 MDIX 默认观感 -->
+                <ResourceDictionary Source="Themes/GlassStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- 全局窗口背景（由主题管理器动态切换） -->
+            <SolidColorBrush x:Key="WindowBackground" Color="White" />
+            <FontFamily x:Key="AppFontFamily">Segoe UI, Microsoft YaHei, SimSun</FontFamily>
+
+            <!-- 特效用节日纯色令牌（非渐变，遵守 P0 规范；用于粒子/彩屑/提示气泡着色） -->
+            <SolidColorBrush x:Key="FestiveGreen" Color="#43A047"/>
+            <SolidColorBrush x:Key="FestiveAmber" Color="#FB8C00"/>
+            <SolidColorBrush x:Key="FestiveBlue" Color="#1E88E5"/>
+            <SolidColorBrush x:Key="FestiveTeal" Color="#00897B"/>
+
+            <!-- 卡通场景设计令牌：集中定义（非紫粉渐变，遵守 P0 规范），UI 用 DynamicResource 引用，避免散落硬编码颜色 -->
+            <LinearGradientBrush x:Key="CartoonSkySpace" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#0B1E3F" Offset="0"/>
+                <GradientStop Color="#1B3A6B" Offset="1"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="CartoonSkyDay" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#8ED0F5" Offset="0"/>
+                <GradientStop Color="#D6F0FF" Offset="1"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="CartoonSkyCity" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#243B6B" Offset="0"/>
+                <GradientStop Color="#4A6FA5" Offset="1"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="CartoonPond" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#7FD8C8" Offset="0"/>
+                <GradientStop Color="#2E8B8B" Offset="1"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="CartoonGround" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#8BD96A" Offset="0"/>
+                <GradientStop Color="#5BA83E" Offset="1"/>
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="CartoonCloud" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="CartoonSun" Color="#FFC93C"/>
+            <SolidColorBrush x:Key="CartoonSunRay" Color="#FFE08A"/>
+            <SolidColorBrush x:Key="CartoonGrass" Color="#7CCB5A"/>
+            <SolidColorBrush x:Key="CartoonGrassDark" Color="#5BA83E"/>
+            <SolidColorBrush x:Key="CartoonLeaf" Color="#3FA34D"/>
+            <SolidColorBrush x:Key="CartoonStar" Color="#FFE066"/>
+            <SolidColorBrush x:Key="CartoonPlanet" Color="#6C8CD5"/>
+            <SolidColorBrush x:Key="CartoonBuilding" Color="#2E3A5C"/>
+            <SolidColorBrush x:Key="CartoonBuildingLit" Color="#FFD966"/>
+            <SolidColorBrush x:Key="CartoonHole" Color="#5A3A22"/>
+            <SolidColorBrush x:Key="CartoonMoon" Color="#F5F3C8"/>
+
+            <!-- ===== 全局：MDIX 卡片玻璃化 =====
+                 放在 Application 自身的资源字典中，确保 BasedOn 能解析到 MDIX 的默认卡片样式。 -->
+            <Style TargetType="materialDesign:Card" BasedOn="{StaticResource {x:Type materialDesign:Card}}">
+                <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+                <Setter Property="UniformCornerRadius" Value="16"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp3"/>
+            </Style>
+
+            <!-- 分组选择按钮：未选中为描边样式，选中填主题色 + 白字加粗，形成清晰单选分组 -->
+            <conv:EnumEqualsConverter x:Key="EnumEqualsConverter"/>
+
+            <Style x:Key="DifficultySelectorStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+                <Style.Triggers>
+                    <DataTrigger Value="True">
+                        <DataTrigger.Binding>
+                            <MultiBinding Converter="{StaticResource EnumEqualsConverter}">
+                                <Binding RelativeSource="{RelativeSource Self}" Path="Tag"/>
+                                <Binding Path="SelectedDifficulty"/>
+                            </MultiBinding>
+                        </DataTrigger.Binding>
+                        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="TypeSelectorStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+                <Style.Triggers>
+                    <DataTrigger Value="True">
+                        <DataTrigger.Binding>
+                            <MultiBinding Converter="{StaticResource EnumEqualsConverter}">
+                                <Binding RelativeSource="{RelativeSource Self}" Path="Tag"/>
+                                <Binding Path="SelectedType"/>
+                            </MultiBinding>
+                        </DataTrigger.Binding>
+                        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

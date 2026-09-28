@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TypeMaster.App</RootNamespace>
+    <AssemblyName>TypeMaster</AssemblyName>
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Product>TypeMaster 打字通</Product>
+    <Authors>大表哥</Authors>
+    <Company>大表哥</Company>
+    <Copyright>Copyright © 2026 大表哥</Copyright>
+    <!-- 版本号：主版本.次版本.月日.时分，每次编译时按当前时间自动生成，
+         保证每次修改代码后小版本号都会递增 -->
+    <VersionMajor>1</VersionMajor>
+    <VersionMinor>0</VersionMinor>
+    <VersionBuild>$([System.DateTime]::Now.ToString('MMdd'))</VersionBuild>
+    <VersionRevision>$([System.DateTime]::Now.ToString('HHmm'))</VersionRevision>
+    <Version>$(VersionMajor).$(VersionMinor).$(VersionBuild).$(VersionRevision)</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
+    <PackageReference Include="MaterialDesignColors" Version="2.1.4" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeMaster.Core\TypeMaster.Core.csproj" />
+    <ProjectReference Include="..\TypeMaster.Data\TypeMaster.Data.csproj" />
+    <ProjectReference Include="..\TypeMaster.Services\TypeMaster.Services.csproj" />
+    <ProjectReference Include="..\TypeMaster.ViewModels\TypeMaster.ViewModels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="AppIcon.ico" />
+  </ItemGroup>
+
+  <!-- 游戏背景音乐：以「内嵌资源」方式打进程序集。
+       原因：发布为单文件 exe 时，散落的 mp3 文件不会被自动收集，
+       内嵌后由 MusicService 从程序集读取，确保单文件发布不丢资源。 -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Music\*.mp3" />
+  </ItemGroup>
+
+  <!-- 卡通角色精灵：WPF Resource，通过 pack:// 路径在 XAML 中直接引用 -->
+  <ItemGroup>
+    <Resource Include="Assets\Sprites\*.png" />
+  </ItemGroup>
+
+</Project>

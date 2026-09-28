@@ -1,0 +1,155 @@
+<UserControl x:Class="TypeMaster.App.Views.Pages.GameCenterPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:core="clr-namespace:TypeMaster.Core.Enums;assembly=TypeMaster.Core"
+             mc:Ignorable="d">
+    <Grid Margin="8">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- 头部横幅 + 装饰键盘贴图 -->
+                <materialDesign:Card Margin="0,4,0,14" Padding="20,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="游戏乐园" FontSize="22" FontWeight="Bold"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="挑选一款打字小游戏，在玩乐中提升输入速度与准确率"
+                                       FontSize="14" Foreground="{DynamicResource GlassTextSecondaryBrush}"
+                                       Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Width="240" Height="96" Background="{DynamicResource PrimaryHueLightBrush}"
+                                Opacity="0.35" CornerRadius="12" Padding="12" VerticalAlignment="Center">
+                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="1">
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="1">
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="1">
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="20" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                    <Rectangle Width="64" Height="15" RadiusX="3" RadiusY="3" Fill="{DynamicResource PrimaryHueMidBrush}" Margin="2"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <WrapPanel Orientation="Horizontal">
+                    <!-- 太空大战 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource PrimaryHueMidBrush}" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Rocket" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="太空大战" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="敌机携带单词从天而降，输入单词将其击落，别让它们着陆！"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.SpaceWar}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 打地鼠 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource PrimaryHueMidBrush}" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Rodent" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="打地鼠" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="地鼠顶着单词冒出洞口，抢在缩回去之前把它敲掉。"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.WhackMole}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 抓小偷 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource PrimaryHueMidBrush}" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Run" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="抓小偷" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="小偷带着单词横穿屏幕，输入单词将其擒获，别让他溜走！"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.CatchThief}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 青蛙吃虫 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource PrimaryHueMidBrush}" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Bug" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="青蛙吃虫" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="虫子爬向青蛙，输入单词让它一口吃掉，守住中线！"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.FrogBug}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 打气球 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="#EC407A" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Balloon" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="打气球" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="气球带着单词往上飘，输入单词把它扎破，别让它飞出屏幕！"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.BalloonPop}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- 生死时速 -->
+                    <materialDesign:Card Width="300" Margin="10" Padding="18">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="14" Background="#7E57C2" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Speedometer" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="生死时速" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,4"
+                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                            <TextBlock Text="和电脑赛跑！完整输入单词驱动选手前进，先到终点的人获胜。"
+                                       FontSize="13" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource GlassTextSecondaryBrush}" Margin="0,0,0,14"/>
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="开始游戏"
+                                    Command="{Binding PlayCommand}" CommandParameter="{x:Static core:GameMode.LifeDeathSpeed}"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

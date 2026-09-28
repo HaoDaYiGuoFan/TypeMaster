@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TypeMaster.ViewModels</RootNamespace>
+    <AssemblyName>TypeMaster.ViewModels</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeMaster.Core\TypeMaster.Core.csproj" />
+    <ProjectReference Include="..\TypeMaster.Services\TypeMaster.Services.csproj" />
+  </ItemGroup>
+
+</Project>
