@@ -4,6 +4,7 @@
 > 覆盖指法入门到文章练习的完整学习路径，并配有 6 款打字小游戏、五笔与拼音学习园地。
 > **内置面向中老年学习者的「长辈模式」**：一键放大字号、放慢语速、开启五笔逐码提示。
 > **支持多使用者**：同一台电脑上多人使用，成绩与进度各自独立、互不干扰。
+> 本项目完全基于Workbuddy+deepseek v4 Flash/AutoClaw + GLM5.3 Flash 开发
 
 <p>
   <img alt=".NET" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
