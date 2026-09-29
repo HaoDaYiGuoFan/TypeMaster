@@ -59,7 +59,9 @@ public class SpeechService : ITextToSpeechService, IDisposable
 
     #region 朗读
 
-    public bool Speak(string text)
+    public bool Speak(string text) => Speak(text, 0);
+
+    public bool Speak(string text, int rateOffset)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -87,8 +89,9 @@ public class SpeechService : ITextToSpeechService, IDisposable
                     return false;
                 }
 
-                // 语速：配置里是 -5~5 的档位，SAPI 的 Rate 正好也是 -10~10，直接映射
-                int rate = Math.Clamp(AppState.Current.SpeechRate, -5, 5);
+                // 语速：配置里是 -5~5 的档位，SAPI 的 Rate 正好也是 -10~10，直接映射。
+                // rateOffset 用于按场景微调（如五笔编码提示需要更慢），叠加后再收敛。
+                int rate = Math.Clamp(AppState.Current.SpeechRate + rateOffset, -5, 5);
                 if (_synth.Rate != rate)
                 {
                     _synth.Rate = rate;

@@ -39,6 +39,40 @@ public class AppConfig
     public double FontSize { get; set; } = 22;
 
     /// <summary>窗口宽度</summary>
+    // ---------------- 长辈模式（面向中老年学习者的整体预设）----------------
+    //
+    // 设计意图：把"适合长辈"的一组设置打包成一个开关，一键生效，
+    // 不需要逐项去调。各子项仍可单独覆盖，方便按个人习惯微调。
+
+    /// <summary>
+    /// 长辈模式总开关。开启后自动应用大字号、慢节奏，
+    /// 并默认打开五笔逐码按键提示与大字显示。
+    /// </summary>
+    public bool ElderMode { get; set; }
+
+    /// <summary>
+    /// 五笔练习时显示逐码按键提示（如「第2码 E键（月）」）。
+    /// 面向初学五笔的用户；熟练后可关闭。
+    /// </summary>
+    public bool ShowWubiKeyHint { get; set; } = true;
+
+    /// <summary>
+    /// 五笔练习时用大字显示当前字与编码，方便看清。
+    /// </summary>
+    public bool ShowWubiBigChar { get; set; } = true;
+
+    /// <summary>
+    /// 切换到新的练习字时自动朗读该字的编码与按键提示。
+    /// 依赖系统中文语音引擎；未安装时自动跳过，不影响其它功能。
+    /// </summary>
+    public bool SpeakWubiHint { get; set; }
+
+    /// <summary>进入长辈模式前的字号，用于关闭长辈模式时恢复原值。</summary>
+    public double FontSizeBeforeElderMode { get; set; } = 22;
+
+    /// <summary>进入长辈模式前的语音语速，用于关闭时恢复。</summary>
+    public int SpeechRateBeforeElderMode { get; set; }
+
     public int WindowWidth { get; set; } = 1100;
 
     /// <summary>窗口高度</summary>

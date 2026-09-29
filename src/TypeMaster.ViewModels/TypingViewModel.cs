@@ -83,6 +83,41 @@ public partial class TypingViewModel : ObservableObject
     [ObservableProperty]
     private bool _isWubiMode;
 
+    /// <summary>
+    /// 五笔模式下当前正在输入的那个字（按已输入编码长度推算）。
+    /// 用于大字显示与逐码提示；非五笔模式或已打完时为空字符。
+    /// </summary>
+    [ObservableProperty]
+    private char _wubiCurrentChar;
+
+    /// <summary>
+    /// 当前字的逐码按键提示文字，例如：
+    ///     编码 JE    第1码 J键（日）    第2码 E键（月）
+    /// 非五笔模式或无可提示内容时为空串。
+    /// </summary>
+    [ObservableProperty]
+    private string _wubiHintText = string.Empty;
+
+    /// <summary>当前字已完成了几码（用于显示「第 2 / 3 码」这类进度）。</summary>
+    [ObservableProperty]
+    private int _wubiTypedCodes;
+
+    /// <summary>当前字需要几码。</summary>
+    [ObservableProperty]
+    private int _wubiTotalCodes;
+
+    /// <summary>当前字与编码的大字展示文本，例如「明   J E」。</summary>
+    [ObservableProperty]
+    private string _wubiBigText = string.Empty;
+
+    /// <summary>是否显示逐码按键提示（来自设置，可在页面内即时切换）。</summary>
+    [ObservableProperty]
+    private bool _showWubiKeyHint = true;
+
+    /// <summary>是否显示当前字与编码的大字区。</summary>
+    [ObservableProperty]
+    private bool _showWubiBigChar = true;
+
     /// <summary>五笔练习：期望的编码串（"编码 空格 编码…"，与 WubiUnits 一一对应）。</summary>
     [ObservableProperty]
     private string _wubiExpectedCodes = string.Empty;
@@ -505,6 +540,8 @@ public partial class TypingViewModel : ObservableObject
         WubiExpectedCodes = string.Join(" ", units.Select(u => u.Code));
         // TargetText 同步保存汉字串，便于文章重打与展示兜底
         TargetText = string.Concat(units.Select(u => u.Char));
+        _lastSpokenWubiChar = '\0';
+        RefreshWubiHint();
         Debug.WriteLine($"[TypingViewModel] 五笔会话构建完成：{units.Count} 个字，编码串长度 {WubiExpectedCodes.Length}");
     }
 
@@ -633,6 +670,8 @@ public partial class TypingViewModel : ObservableObject
         GradeText = "-";
         GradeChineseText = "尚未评定";
         GradeStars = 0;
+        _lastSpokenWubiChar = '\0';
+        ClearWubiHint();
         _timer.Stop();
 
         if (SelectedType == PracticeType.SpeedTest)
@@ -765,6 +804,7 @@ public partial class TypingViewModel : ObservableObject
             : Math.Min(100, typed.Length * 100 / target.Length);
 
         UpdateGradePreview(result);
+        RefreshWubiHint();
 
         PlayFeedback(target, typed);
 
@@ -773,6 +813,99 @@ public partial class TypingViewModel : ObservableObject
             FinishSession(result, "已完成！可点击提交保存成绩");
         }
     }
+
+    /// <summary>
+    /// 刷新五笔提示信息：当前字、逐码按键提示、大字文本。
+    ///
+    /// 计算方式：已输入串按空格切分，最后一段是"正在输入"的那一码串；
+    /// 前面完整段数 = 已完成的字数，据此定位当前字与已输入的码数。
+    /// 这种方式与 EvaluateWubi 的统计口径保持一致。
+    /// </summary>
+    private void RefreshWubiHint()
+    {
+        if (!IsWubiMode || WubiUnits.Count == 0)
+        {
+            ClearWubiHint();
+            return;
+        }
+
+        string typed = TypedText ?? string.Empty;
+
+        // 已输入串按空格切分：末段是当前字正在输入的码，已完成字数 = 段数 - 1
+        var segments = typed.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        int doneChars = System.Math.Max(0, segments.Length - 1);
+        string currentTyped = segments.Length > 0 ? segments[^1] : string.Empty;
+
+        // 输入以空格结尾时，当前字刚好打完，切到下一个字
+        if (typed.EndsWith(' ') && segments.Length > 0)
+        {
+            doneChars = segments.Length;
+            currentTyped = string.Empty;
+        }
+
+        if (doneChars >= WubiUnits.Count)
+        {
+            ClearWubiHint();
+            return;
+        }
+
+        WubiUnit unit = WubiUnits[doneChars];
+        WubiCurrentChar = unit.Char;
+        WubiTotalCodes = unit.Code.Length;
+        WubiTypedCodes = System.Math.Min(currentTyped.Length, unit.Code.Length);
+
+        // 大字区：「字  编码」，已输入的码用下标方式提示进度
+        var big = new System.Text.StringBuilder();
+        big.Append(unit.Char).Append("    ");
+        for (int k = 0; k < unit.Code.Length; k++)
+        {
+            if (k > 0) big.Append(' ');
+            big.Append(char.ToUpperInvariant(unit.Code[k]));
+        }
+        WubiBigText = big.ToString();
+
+        WubiHintText = ShowWubiKeyHint ? WubiLibrary.GetHintText(unit.Char) : string.Empty;
+
+        // 自动朗读：仅在推进到新字时触发，避免每次击键都念
+        if (AppState.Current.SpeakWubiHint)
+        {
+            RaiseSpeakWubiHint(unit.Char);
+        }
+    }
+
+    /// <summary>清空五笔提示（非五笔模式、已打完或已交卷时调用）。</summary>
+    private void ClearWubiHint()
+    {
+        WubiCurrentChar = '\0';
+        WubiHintText = string.Empty;
+        WubiTypedCodes = 0;
+        WubiTotalCodes = 0;
+        WubiBigText = string.Empty;
+    }
+
+    /// <summary>上次朗读过的字，避免同一字被反复朗读。</summary>
+    private char _lastSpokenWubiChar;
+
+    /// <summary>
+    /// 请求朗读当前字的编码与按键提示。页面订阅 <see cref="WubiSpeakRequested"/> 后调用语音服务。
+    /// 页面层负责朗读，ViewModel 不直接依赖语音实现（沿用既有的解耦方式）。
+    /// </summary>
+    private void RaiseSpeakWubiHint(char ch)
+    {
+        if (ch == _lastSpokenWubiChar)
+        {
+            return;
+        }
+        _lastSpokenWubiChar = ch;
+        string text = WubiLibrary.GetHintText(ch, forSpeech: true);
+        if (!string.IsNullOrEmpty(text))
+        {
+            WubiSpeakRequested?.Invoke(this, text);
+        }
+    }
+
+    /// <summary>请求朗读五笔提示文本（由页面订阅并调用语音服务）。</summary>
+    public event System.EventHandler<string>? WubiSpeakRequested;
 
     /// <summary>实时刷新评级预览，让用户边打边知道当前是什么水平。</summary>
     private void UpdateGradePreview(TypingResult result)

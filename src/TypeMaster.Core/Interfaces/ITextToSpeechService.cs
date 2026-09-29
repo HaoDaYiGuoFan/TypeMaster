@@ -25,6 +25,17 @@ public interface ITextToSpeechService
     /// <returns>真正开始朗读返回 true；被开关关闭、无语音或文本为空返回 false</returns>
     bool Speak(string text);
 
+    /// <summary>
+    /// 以指定的相对语速朗读文本。
+    ///
+    /// 用途：五笔编码提示（「第1码按J键，日」）信息密度高，
+    /// 用常规语速听不清，需要额外放慢；而普通朗读不应受影响。
+    /// </summary>
+    /// <param name="text">要朗读的文本</param>
+    /// <param name="rateOffset">语速相对偏移（负数更慢），会与设置的语速叠加后收敛到合法区间</param>
+    /// <returns>真正开始朗读返回 true；被开关关闭、无语音或文本为空返回 false</returns>
+    bool Speak(string text, int rateOffset);
+
     /// <summary>立即停止当前朗读。</summary>
     void Stop();
 }

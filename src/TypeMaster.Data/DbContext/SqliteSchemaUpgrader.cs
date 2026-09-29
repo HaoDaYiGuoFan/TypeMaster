@@ -37,7 +37,15 @@ public static class SqliteSchemaUpgrader
                 ("SpeechRate", "INTEGER NOT NULL DEFAULT 0"),
                 ("EnableMusic", "INTEGER NOT NULL DEFAULT 1"),
                 ("MusicVolume", "INTEGER NOT NULL DEFAULT 55"),
-                ("SoundVolume", "INTEGER NOT NULL DEFAULT 80")
+                ("SoundVolume", "INTEGER NOT NULL DEFAULT 80"),
+                // 长辈模式（面向中老年学习者）：默认值与 AppConfig 保持一致，
+                // 保证既有用户升级后行为不变——ElderMode 默认关闭。
+                ("ElderMode", "INTEGER NOT NULL DEFAULT 0"),
+                ("ShowWubiKeyHint", "INTEGER NOT NULL DEFAULT 1"),
+                ("ShowWubiBigChar", "INTEGER NOT NULL DEFAULT 1"),
+                ("SpeakWubiHint", "INTEGER NOT NULL DEFAULT 0"),
+                ("FontSizeBeforeElderMode", "REAL NOT NULL DEFAULT 22"),
+                ("SpeechRateBeforeElderMode", "INTEGER NOT NULL DEFAULT 0")
             }
         };
 

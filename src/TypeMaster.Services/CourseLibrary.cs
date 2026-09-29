@@ -21,7 +21,18 @@ public enum CourseStage
     /// <summary>句子练习：完整句子与标点</summary>
     Sentence = 3,
     /// <summary>文章练习：整篇文章与五笔短文</summary>
-    Article = 4
+    Article = 4,
+
+    /// <summary>
+    /// 五笔入门（零基础支线）。
+    ///
+    /// 为什么单独成阶段而不插进主线的顺序里：
+    ///   主线关卡按「前一关已通关」判定解锁，若把五笔关卡插到中间，
+    ///   已通关用户的进度链会被打断（新插入的关卡永远解锁不了）。
+    ///   独立成阶段并单独判定解锁，既不影响既有存档，也让想学五笔的
+    ///   用户不必先做完 20 关英文/中文练习就能直接开始。
+    /// </summary>
+    WubiBasics = 5
 }
 
 /// <summary>
@@ -42,7 +53,13 @@ public enum LessonTextSource
     /// <summary>内置文章（按难度与等级取随机篇目）</summary>
     Article = 5,
     /// <summary>五笔字根短文</summary>
-    Wubi = 6
+    Wubi = 6,
+
+    /// <summary>
+    /// 五笔按编码长度出字：SourceArg 给出码长（1~4）。
+    /// 供「五笔入门」支线使用，从一码字开始循序渐进。
+    /// </summary>
+    WubiByCodeLength = 7
 }
 
 /// <summary>
@@ -191,7 +208,35 @@ public static class CourseLibrary
 
         new("article-wubi", CourseStage.Article, 20, "毕业关 · 五笔短文",
             "用五笔编码完整输入一段中文，通关即代表五笔字根已经形成肌肉记忆。",
-            PracticeType.Wubi, Difficulty.Hard, 9, LessonTextSource.Wubi)
+            PracticeType.Wubi, Difficulty.Hard, 9, LessonTextSource.Wubi),
+
+        // ---------- 五笔入门支线（零基础，可独立开始练，不必先通关主线）----------
+        //
+        // 顺序按"编码击键数"由少到多：一码字 → 二码 → 三码 → 四码 → 常用字 → 短文。
+        // 这样第一关就能打出完整的字，快速建立成就感；不用先背熟字根表。
+        new("wubi-basic-1key", CourseStage.WubiBasics, 21, "五笔入门 · 一键成字",
+            "一级简码只有 25 个字，每个字按一个字母键加空格就打出来。先体会「一击成字」的感觉，不必背字根。",
+            PracticeType.Wubi, Difficulty.Easy, 1, LessonTextSource.WubiByCodeLength, "1"),
+
+        new("wubi-basic-2key", CourseStage.WubiBasics, 22, "五笔入门 · 两码字",
+            "两码成字是最常见的形式：第一码定位大方向，第二码锁定具体字。屏幕会逐码提示该按哪个键。",
+            PracticeType.Wubi, Difficulty.Easy, 2, LessonTextSource.WubiByCodeLength, "2"),
+
+        new("wubi-basic-3key", CourseStage.WubiBasics, 23, "五笔入门 · 三码字",
+            "三码字数量最多。不用记拆解规则，照着屏幕上的逐码提示按即可，按多了自然形成手感。",
+            PracticeType.Wubi, Difficulty.Normal, 4, LessonTextSource.WubiByCodeLength, "3"),
+
+        new("wubi-basic-4key", CourseStage.WubiBasics, 24, "五笔入门 · 四码字",
+            "需要四码的字手指移动范围更大，慢慢来，准确比快更重要。",
+            PracticeType.Wubi, Difficulty.Normal, 5, LessonTextSource.WubiByCodeLength, "4"),
+
+        new("wubi-basic-common", CourseStage.WubiBasics, 25, "五笔入门 · 常用字综合",
+            "混合各种码长，练习最常用的字。到这一关应该已经不太需要看提示了。",
+            PracticeType.Wubi, Difficulty.Normal, 6, LessonTextSource.Wubi),
+
+        new("wubi-basic-text", CourseStage.WubiBasics, 26, "五笔入门 · 打一小段话",
+            "用五笔完整打出几句话。做到这一步，日常用五笔记事已经没问题。",
+            PracticeType.Wubi, Difficulty.Hard, 8, LessonTextSource.Wubi)
     };
 
     #endregion 关卡表
@@ -232,12 +277,43 @@ public static class CourseLibrary
     /// <returns>是否已解锁</returns>
     public static bool IsUnlocked(CourseLesson lesson, CourseProgress? progress)
     {
+        // 五笔入门支线独立判定：只依赖本支线的前一关，不要求通关主线。
+        //
+        // 理由：支线的目标是让零基础用户（尤其是中老年学习者）能直接开始学五笔，
+        // 而不必先做完 20 关英文指法/单词/句子练习。
+        // 若沿用主线的"前一关已通关"规则，第一关五笔的前置会变成主线毕业关，
+        // 等于把门槛设成了做完整个主线，与支线的用意矛盾。
+        if (lesson.Stage == CourseStage.WubiBasics)
+        {
+            return IsUnlockedInWubiBasics(lesson, progress);
+        }
+
         CourseLesson? prev = GetPrevious(lesson);
         if (prev == null)
         {
             return true;
         }
         return progress != null && progress.IsCleared(prev.Id);
+    }
+
+    /// <summary>
+    /// 五笔入门支线内部的解锁判定：支线第一关始终可玩，其余要求支线内前一关已通关。
+    /// </summary>
+    /// <param name="lesson">待判断的关卡（须属于五笔入门支线）</param>
+    /// <param name="progress">当前进度</param>
+    /// <returns>是否已解锁</returns>
+    private static bool IsUnlockedInWubiBasics(CourseLesson lesson, CourseProgress? progress)
+    {
+        var chain = Lessons.Where(l => l.Stage == CourseStage.WubiBasics)
+                           .OrderBy(l => l.StageOrder)
+                           .ToList();
+        int idx = chain.FindIndex(l => l.Id == lesson.Id);
+        if (idx <= 0)
+        {
+            // 支线第一关（或未找到）：直接开放
+            return true;
+        }
+        return progress != null && progress.IsCleared(chain[idx - 1].Id);
     }
 
     /// <summary>阶段中文名。</summary>
@@ -247,6 +323,7 @@ public static class CourseLibrary
         CourseStage.SingleKey => "单键练习",
         CourseStage.Word => "单词练习",
         CourseStage.Sentence => "句子练习",
+        CourseStage.WubiBasics => "五笔入门（零基础）",
         _ => "文章练习"
     };
 
@@ -257,6 +334,7 @@ public static class CourseLibrary
         CourseStage.SingleKey => "分组反复击打同一批按键，让手指记住每个键的距离。",
         CourseStage.Word => "从单个字母走向整词输入，开始建立连击节奏。",
         CourseStage.Sentence => "加入空格与标点，为整篇输入做准备。",
+        CourseStage.WubiBasics => "专为零基础准备，从一键成字开始。屏幕会逐码提示该按哪个键，不必先背字根。",
         _ => "整篇对照输入，检验速度、准确率与持久力。"
     };
 
@@ -275,12 +353,42 @@ public static class CourseLibrary
             LessonTextSource.EnglishSentences => WordLibrary.GetEnglishSentenceText(lesson.Difficulty, lesson.Level),
             LessonTextSource.ChineseSentences => WordLibrary.GetChineseSentenceText(lesson.Difficulty, lesson.Level),
             LessonTextSource.Article => TextLibrary.GetRandomBuiltIn(lesson.Difficulty, lesson.Level),
-            LessonTextSource.Wubi => WubiLibrary.GetRandomPractice(lesson.Difficulty, lesson.Level),
+            // 自由练习用的五笔随机短文
+            LessonTextSource.Wubi => lesson.Stage == CourseStage.WubiBasics
+                ? WubiLibrary.GetCommonPractice(26, maxCodeLength: 4)
+                : WubiLibrary.GetRandomPractice(lesson.Difficulty, lesson.Level),
+            // 五笔入门支线：SourceArg 给出编码长度（1~4），从一码字循序渐进
+            LessonTextSource.WubiByCodeLength => WubiLibrary.GetPracticeByCodeLength(
+                ParseCodeLength(lesson.SourceArg), CodeLengthPracticeCount(lesson.StageOrder)),
             _ => string.Empty
         };
     }
 
     #endregion 公开接口
+
+    #region 五笔入门支线工具
+
+    /// <summary>解析五笔入门关卡的字长参数；非法值回退到 1（一级简码）。</summary>
+    /// <param name="arg">关卡 SourceArg</param>
+    /// <returns>1~4 的编码长度</returns>
+    private static int ParseCodeLength(string arg)
+        => int.TryParse(arg, out int n) ? Math.Clamp(n, 1, 4) : 1;
+
+    /// <summary>
+    /// 各关的练习字数：前期少而精，后期逐步加量，避免一上来就疲劳。
+    /// </summary>
+    /// <param name="stageOrder">关卡序号</param>
+    /// <returns>本次练习的字数</returns>
+    private static int CodeLengthPracticeCount(int stageOrder) => stageOrder switch
+    {
+        21 => 12,   // 一码字：少一些，先把"一击成字"的手感建立起来
+        22 => 16,
+        23 => 20,
+        24 => 20,
+        _ => 24
+    };
+
+    #endregion 五笔入门支线工具
 
     #region 私有工具
 

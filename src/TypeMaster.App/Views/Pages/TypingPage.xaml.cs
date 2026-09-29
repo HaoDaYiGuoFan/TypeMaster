@@ -20,6 +20,7 @@ public partial class TypingPage : UserControl
 {
     private readonly TypingViewModel _vm;
     private readonly IKeyboardHookService _hook;
+    private readonly ITextToSpeechService _speech;
     private readonly Random _rand = new();
 
     private static readonly SolidColorBrush RightBrush = new(Colors.Green);
@@ -37,9 +38,12 @@ public partial class TypingPage : UserControl
         _vm = App.ServiceProvider.GetRequiredService<TypingViewModel>();
         DataContext = _vm;
         _hook = App.ServiceProvider.GetRequiredService<IKeyboardHookService>();
+        _speech = App.ServiceProvider.GetRequiredService<ITextToSpeechService>();
 
         _vm.PropertyChanged += Vm_PropertyChanged;
         _vm.EffectRequested += OnEffect;
+        // 五笔学习提示的朗读：由 VM 在切换到新字时发起，页面负责调用语音服务
+        _vm.WubiSpeakRequested += OnWubiSpeakRequested;
         AppState.SettingsChanged += (_, _) => ApplySettings();
         InputBox.TextChanged += (_, _) => _vm.SetTyped(InputBox.Text);
 
@@ -48,6 +52,32 @@ public partial class TypingPage : UserControl
         // 避免“新页面 Loaded 先触发 Start、旧页面 Unloaded 后触发 Stop”导致钩子被关闭。
         Unloaded += (_, _) => { };
     }
+
+    /// <summary>
+    /// 朗读五笔学习提示（如「明，编码 J E，第1码按J键，日…」）。
+    ///
+    /// 面向中老年学习者：编码提示信息密度高，这里固定用比常规慢 2 档的语速
+    /// （在设置语速基础上叠加负偏移），否则快语速下听不清编码。
+    /// 系统缺少中文语音或朗读开关关闭时静默跳过，不影响练习。
+    /// </summary>
+    private void OnWubiSpeakRequested(object? sender, string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+        try
+        {
+            _speech.Speak(text, WubiHintSpeechRateOffset);
+        }
+        catch
+        {
+            // 朗读失败不应影响打字练习
+        }
+    }
+
+    /// <summary>五笔编码提示的相对语速偏移（负数更慢）。</summary>
+    private const int WubiHintSpeechRateOffset = -2;
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -170,6 +200,17 @@ public partial class TypingPage : UserControl
         InputBox.FontFamily = font;
         InputBox.FontSize = cfg.FontSize;
         VkHost.Visibility = cfg.ShowVirtualKeyboard ? Visibility.Visible : Visibility.Collapsed;
+
+        // 五笔学习提示的可见性：长辈模式下默认开启，也可在设置里单独控制
+        _vm.ShowWubiKeyHint = cfg.ShowWubiKeyHint;
+        _vm.ShowWubiBigChar = cfg.ShowWubiBigChar;
+
+        // 长辈模式：练习区字号进一步放大，方便看清
+        if (cfg.ElderMode)
+        {
+            DisplayBox.FontSize = Math.Max(cfg.FontSize, 24);
+            InputBox.FontSize = Math.Max(cfg.FontSize, 22);
+        }
     }
 
     /// <summary>

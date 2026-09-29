@@ -149,21 +149,58 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- 对照文本（彩色） + 输入区 -->
+            <!-- 对照文本（彩色） + 五笔学习提示 + 输入区 -->
             <materialDesign:Card Grid.Row="2" Padding="10" Margin="0,0,0,8">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <RichTextBox x:Name="DisplayBox" Grid.Row="0" IsReadOnly="True" IsDocumentEnabled="False"
+                    <!-- ===== 五笔学习提示区（仅五笔模式显示）=====
+                         面向初学五笔的中老年用户：
+                           · 大字显示当前要打的字与它的编码，不用眯眼
+                           · 逐码告诉"第几码按哪个键、这个键叫什么"，不必先背熟字根
+                           · 显示已打几码 / 共几码，心里有数
+                    -->
+                    <Border Grid.Row="0" x:Name="WubiHintPanel" Margin="0,0,0,8" Padding="12,10"
+                            CornerRadius="8" Background="#FFF7E8" BorderBrush="#F0D9A8" BorderThickness="1"
+                            Visibility="{Binding IsWubiMode, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <!-- 大字：当前字 + 编码 -->
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{Binding ShowWubiBigChar, Converter={StaticResource BoolToVis}}">
+                                <TextBlock x:Name="WubiBigCharText" Text="{Binding WubiBigText}"
+                                           FontSize="34" FontWeight="Bold" VerticalAlignment="Center"
+                                           Foreground="#8A5A00"/>
+                                <TextBlock x:Name="WubiProgressText" Margin="16,0,0,0" VerticalAlignment="Bottom"
+                                           FontSize="13" Foreground="#A97B2E"
+                                           Text="{Binding WubiTypedCodes, StringFormat=已打 {0} 码}"/>
+                                <TextBlock Margin="4,0,0,0" VerticalAlignment="Bottom"
+                                           FontSize="13" Foreground="#A97B2E"
+                                           Text="{Binding WubiTotalCodes, StringFormat=/ 共 {0} 码}"/>
+                            </StackPanel>
+
+                            <!-- 逐码按键提示 -->
+                            <TextBlock x:Name="WubiHintText" Margin="0,6,0,0" Text="{Binding WubiHintText}"
+                                       FontSize="15" TextWrapping="Wrap" LineHeight="1.6"
+                                       Foreground="#7A5200"
+                                       Visibility="{Binding ShowWubiKeyHint, Converter={StaticResource BoolToVis}}"/>
+
+                            <!-- 操作提示语 -->
+                            <TextBlock Margin="0,6,0,0" FontSize="12" TextWrapping="Wrap" Foreground="#A97B2E"
+                                       Text="按上面提示的顺序逐个按字母键即可；每个字打完按一下空格。想复习字根可到「学习园地」听口诀。"/>
+                        </StackPanel>
+                    </Border>
+
+                    <RichTextBox x:Name="DisplayBox" Grid.Row="1" IsReadOnly="True" IsDocumentEnabled="False"
                                  VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent"
                                  MinHeight="60" MaxHeight="260" FontSize="14">
                         <FlowDocument/>
                     </RichTextBox>
 
-                    <TextBox x:Name="InputBox" Grid.Row="1" Margin="0,8,0,0" Padding="8,6"
+                    <TextBox x:Name="InputBox" Grid.Row="2" Margin="0,8,0,0" Padding="8,6"
                              BorderBrush="{DynamicResource PrimaryHueMidBrush}" BorderThickness="2"
                              TextWrapping="Wrap" AcceptsReturn="False"
                              MinHeight="36" MaxHeight="64"

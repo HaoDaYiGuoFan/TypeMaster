@@ -26,6 +26,7 @@ dist/
 TypeMaster-Portable-*/
 
 # 本地渲染验证与调试产物
+_cmsg.txt
 *.log
 _render_probe/
 

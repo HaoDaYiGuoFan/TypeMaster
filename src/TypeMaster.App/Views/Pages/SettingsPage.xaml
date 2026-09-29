@@ -12,6 +12,21 @@
                 <TextBlock Text="系统设置" FontSize="20" FontWeight="Bold" Margin="0,0,0,14"
                            Foreground="{DynamicResource GlassTextBrush}"/>
 
+                <!-- ===== 长辈模式 =====
+                     面向中老年学习者的一键预设：字号更大、语速更慢、
+                     五笔提示与语音朗读自动打开。各子项在下方仍可单独调整。 -->
+                <Border Padding="12,10" CornerRadius="8" Background="#EAF4FF"
+                        BorderBrush="#BBD9F5" BorderThickness="1" Margin="0,0,0,14">
+                    <StackPanel>
+                        <CheckBox x:Name="ElderModeCheck" Content="长辈模式（字大、语速慢、五笔提示全开）"
+                                  IsChecked="{Binding Config.ElderMode}" Margin="0,0,0,6"
+                                  Checked="ElderMode_Changed" Unchecked="ElderMode_Changed"/>
+                        <TextBlock Text="开启后自动：字号放大、朗读语速放慢、打开五笔逐码提示与大字显示、显示虚拟键盘、切换护眼绿主题。&#10;关闭时只恢复字号与语速，其它设置保持你当前的选择。"
+                                   FontSize="11.5" TextWrapping="Wrap" Width="400" HorizontalAlignment="Left"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                    </StackPanel>
+                </Border>
+
                 <TextBlock Text="昵称（应用内这样称呼你）" Margin="0,0,0,4"
                            Foreground="{DynamicResource GlassTextBrush}"/>
                 <TextBox Text="{Binding Nickname}" Width="220" HorizontalAlignment="Left"
@@ -58,6 +73,19 @@
                         Style="{StaticResource MaterialDesignDiscreteSlider}"/>
                 <TextBlock Text="朗读使用 Windows 内置中文语音，全程离线，不联网、不上传任何内容。"
                            FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" Margin="0,4,0,0"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
+                <!-- ===== 五笔学习辅助（面向初学五笔的用户）===== -->
+                <TextBlock Text="五笔学习辅助" FontWeight="SemiBold" Margin="0,18,0,4"
+                           Foreground="{DynamicResource GlassTextBrush}"/>
+                <CheckBox Content="显示逐码按键提示（第几码按哪个键、这个键叫什么）"
+                          IsChecked="{Binding Config.ShowWubiKeyHint}" Margin="0,2,0,6"/>
+                <CheckBox Content="大字显示当前字与编码"
+                          IsChecked="{Binding Config.ShowWubiBigChar}" Margin="0,0,0,6"/>
+                <CheckBox Content="切换到新字时朗读编码与按键（语速自动放慢）"
+                          IsChecked="{Binding Config.SpeakWubiHint}" Margin="0,0,0,4"/>
+                <TextBlock Text="练习五笔时，屏幕会逐码提示该按哪个键；不熟悉字根也可以直接开始练。&#10;想复习字根口诀可到「学习园地」。"
+                           FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" Margin="0,2,0,0"
                            Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
 
                 <CheckBox Content="开启背景音乐（游戏乐园）" IsChecked="{Binding Config.EnableMusic}" Margin="0,16,0,6"/>
