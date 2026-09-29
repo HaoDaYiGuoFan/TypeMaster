@@ -15,8 +15,15 @@
         </Style>
     </UserControl.Resources>
 
+    <!--
+        用 Viewbox 包住键盘：屏幕窄或系统缩放较大时（1080p @150%+），
+        键盘整体等比缩小以完整可见；屏幕宽时保持原始大小。
+        StretchDirection=DownOnly 保证只会缩小、不会把键盘放大到失真。
+    -->
     <Border Background="{DynamicResource MaterialDesignCardBackground}"
             BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="10" Padding="10">
-        <StackPanel x:Name="RowsPanel" Orientation="Vertical"/>
+        <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center">
+            <StackPanel x:Name="RowsPanel" Orientation="Vertical"/>
+        </Viewbox>
     </Border>
 </UserControl>

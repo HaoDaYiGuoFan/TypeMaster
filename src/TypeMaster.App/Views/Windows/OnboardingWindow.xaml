@@ -10,7 +10,8 @@
         Title="新手引导" Height="580" Width="620"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         glass:GlassWindowBehavior.Enable="True"
-        FontFamily="{DynamicResource AppFontFamily}">
+        FontFamily="{DynamicResource AppFontFamily}"
+        glass:DialogSizingBehavior.ConstrainToWorkArea="True">
     <!-- 玻璃窗体主体：圆角 + 半透明渐变 + 高光描边 -->
     <Border CornerRadius="14" Background="{DynamicResource GlassWindowBrush}"
             BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ClipToBounds="True">

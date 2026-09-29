@@ -73,6 +73,23 @@ public class AppConfig
     /// <summary>进入长辈模式前的语音语速，用于关闭时恢复。</summary>
     public int SpeechRateBeforeElderMode { get; set; }
 
+    // ---------------- 显示适配（高分屏 / 低分屏高缩放）----------------
+
+    /// <summary>
+    /// 界面整体缩放倍数（0.8 ~ 1.6，1.0 为默认）。
+    ///
+    /// 用途：独立于 Windows 系统缩放，让用户按自己的眼睛舒适度调整。
+    /// 2.8K / 4K 屏幕若觉得字偏小可调大；1080p 且系统缩放 150% 以上、
+    /// 界面显得拥挤时可调小。
+    /// </summary>
+    public double UiScale { get; set; } = 1.0;
+
+    /// <summary>
+    /// 启动时按当前屏幕可用区域自动决定窗口尺寸。
+    /// 开启后 <see cref="WindowWidth"/> / <see cref="WindowHeight"/> 仅作为上限参考。
+    /// </summary>
+    public bool AutoFitWindow { get; set; } = true;
+
     public int WindowWidth { get; set; } = 1100;
 
     /// <summary>窗口高度</summary>

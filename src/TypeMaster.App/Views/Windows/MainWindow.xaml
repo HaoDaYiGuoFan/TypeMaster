@@ -6,8 +6,9 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:glass="clr-namespace:TypeMaster.App"
         xmlns:local="clr-namespace:TypeMaster.App.Views.Windows"
+        xmlns:ui="clr-namespace:TypeMaster.App"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="840" Width="1100" MinHeight="680" MinWidth="900"
+        Title="{Binding Title}" Height="720" Width="1100" MinHeight="560" MinWidth="760"
         Icon="pack://application:,,,/TypeMaster;component/AppIcon.ico"
         ResizeMode="CanResize"
         FontFamily="{DynamicResource AppFontFamily}"
@@ -75,6 +76,7 @@
 
     <!-- 玻璃窗体主体：圆角 + 半透明渐变 + 高光描边 -->
     <Border x:Name="RootBorder" CornerRadius="14"
+            ui:UiScaleBehavior.Scale="{Binding UiScale}"
             Background="{DynamicResource GlassWindowBrush}"
             BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
             ClipToBounds="True">

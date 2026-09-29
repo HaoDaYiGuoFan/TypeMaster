@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +26,15 @@ public partial class App : Application
 {
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
+    /// <summary>
+    /// 用户清单（启动早期即加载完成）。
+    /// 供设置页的「切换/新建/删除用户」使用，也用于在标题栏显示当前用户名。
+    /// </summary>
+    public static UserRegistry Registry { get; private set; } = new();
+
+    /// <summary>用户清单读写器。启动早期就要用，因此不放在 DI 容器里。</summary>
+    public static UserRegistryStore RegistryStore { get; } = new();
+
     // 代码级 DPI 感知（manifest 的保底兜底）
     [DllImport("user32.dll")]
     private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
@@ -39,6 +50,16 @@ public partial class App : Application
         try { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2); } catch { }
 
         base.OnStartup(e);
+
+        // ====================================================================
+        //  第一步：确定"本轮使用哪个用户的数据"
+        //
+        //  必须放在 ConfigureServices 之前——DI 容器构建时会把数据库路径
+        //  固化进 DbContext 单例，之后再换用户就不会生效。
+        //  这也正是"切换用户需要重启应用"的原因。
+        // ====================================================================
+        ResolveCurrentUser();
+
         ConfigureServices();
 
         // 确保 SQLite 数据库与表结构存在
@@ -92,6 +113,55 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// 确定本轮使用哪个用户：加载清单、必要时让用户选择，最后写进 <see cref="AppDataPaths"/>。
+    ///
+    /// 流程：
+    ///   1) 读 users.json
+    ///   2) 一个用户都没有 → 自动建"用户1"，并把旧版单用户数据迁移进来
+    ///   3) 多于一个用户   → 弹选择窗口（免得用户以为看的是自己的成绩）
+    ///   4) 把选中用户写进 AppDataPaths
+    /// </summary>
+    private static void ResolveCurrentUser()
+    {
+        Registry = RegistryStore.Load();
+
+        bool wasEmpty = Registry.Users.Count == 0;
+        List<string> migrateFailed = RegistryStore.EnsureUsable(Registry);
+
+        // 首次创建用户时可能发生了迁移，失败要告知（否则用户以为成绩丢了）
+        if (wasEmpty && migrateFailed.Count > 0)
+        {
+            MessageBox.Show(
+                "升级时以下文件未能迁移到新的用户目录，已保留在原位置：\n\n" +
+                string.Join("\n", migrateFailed) +
+                "\n\n原位置：" + AppDataPaths.DataDirectory,
+                "数据迁移提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        // 多于一个用户才需要选择；只有一个就直接用
+        if (Registry.Users.Count > 1)
+        {
+            var picker = new UserPickerWindow(Registry, allowCreate: true);
+            picker.ShowDialog();
+        }
+
+        // 兜底：选人窗口被强制关闭、或选中的用户已不存在
+        if (Registry.Current is null)
+        {
+            var fallback = Registry.Users.OrderByDescending(u => u.LastUsedAt).FirstOrDefault()
+                           ?? RegistryStore.CreateUser(Registry, "用户1");
+            if (!Registry.Users.Contains(fallback))
+            {
+                Registry.Users.Add(fallback);
+            }
+            Registry.CurrentUserId = fallback.Id;
+            RegistryStore.Save(Registry);
+        }
+
+        AppDataPaths.SetCurrentUser(Registry.Current!.Id);
+    }
+
     private void ConfigureServices()
     {
         var services = new ServiceCollection();
@@ -117,6 +187,10 @@ public partial class App : Application
         services.AddSingleton<IArticleLibrary, JsonArticleLibrary>();
         services.AddSingleton<IUserProfile, JsonUserProfile>();
         services.AddSingleton<ICourseProgressStore, JsonCourseProgressStore>();
+
+        // 用户清单读写器：复用启动时那个实例，避免两份状态不一致
+        services.AddSingleton(RegistryStore);
+        services.AddSingleton(Registry);
 
         // 课程会话：在课程中心页与打字练习页之间传递当前关卡与挑战结果
         services.AddSingleton<CourseSession>();

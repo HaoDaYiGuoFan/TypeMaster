@@ -580,7 +580,8 @@ public partial class HistoryViewModel : ObservableObject
             return string.Empty;
         }
 
-        string dir = Path.Combine(AppDataPaths.DataDirectory, "exports");
+        // 导出到「当前用户」的目录，避免多用户共用电脑时把成绩导到一处
+        string dir = AppDataPaths.ExportDirectory;
         Directory.CreateDirectory(dir);
         string file = Path.Combine(dir, $"typing_records_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 

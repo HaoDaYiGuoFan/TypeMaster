@@ -27,6 +27,65 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ==================== 使用者管理 ====================
+                     多人共用一台电脑时，各自的数据（成绩 / 闯关进度 / 自定义文章 / 昵称）
+                     存放在独立目录中，互不影响。 -->
+                <Border Padding="12,10" CornerRadius="8" Background="#F3F0FF"
+                        BorderBrush="#D6CCF7" BorderThickness="1" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="使用者" FontWeight="SemiBold" Margin="0,0,0,2"
+                                   Foreground="{DynamicResource GlassTextBrush}"/>
+                        <TextBlock Text="同一个人用一台电脑时互不干扰；切换使用者需要重启应用。"
+                                   FontSize="11.5" TextWrapping="Wrap" Width="400" HorizontalAlignment="Left"
+                                   Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
+                        <!-- 使用者列表 -->
+                        <ItemsControl ItemsSource="{Binding UserRows}" Margin="0,8,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Display}" FontSize="13.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource GlassTextBrush}"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11"
+                                                       Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                Content="切换" Margin="6,0,0,0" Padding="12,4"
+                                                Tag="{Binding Id}" Click="SwitchUser_Click"/>
+                                        <Button Grid.Column="2" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                Content="重命名" Margin="6,0,0,0" Padding="12,4"
+                                                Tag="{Binding Id}" Click="RenameUser_Click"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 新建使用者 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBox Text="{Binding NewUserName}" Width="180" Padding="10,6,6,6"
+                                     materialDesign:HintAssist.Hint="新使用者昵称" MaxLength="12"
+                                     VerticalAlignment="Center"/>
+                            <Button Style="{StaticResource MaterialDesignOutlinedButton}" Content="新建"
+                                    Margin="8,0,0,0" Padding="16,4" Click="CreateUser_Click"/>
+                            <Button Style="{StaticResource MaterialDesignFlatButton}" Content="删除选中"
+                                    Margin="8,0,0,0" Padding="12,4" Click="DeleteUser_Click"
+                                    ToolTip="先点选列表中的使用者，再点此删除（会一并删除其全部数据）"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding UserStatusMessage}" FontSize="11.5" TextWrapping="Wrap"
+                                   Width="400" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </Border>
+
                 <TextBlock Text="昵称（应用内这样称呼你）" Margin="0,0,0,4"
                            Foreground="{DynamicResource GlassTextBrush}"/>
                 <TextBox Text="{Binding Nickname}" Width="220" HorizontalAlignment="Left"
@@ -52,15 +111,47 @@
                 <Slider Value="{Binding Config.FontSize}" Minimum="14" Maximum="40" Width="320" HorizontalAlignment="Left"
                         Style="{StaticResource MaterialDesignDiscreteSlider}"/>
 
-                <TextBlock Text="{Binding Config.WindowWidth, StringFormat=窗口宽度：{0}}" Margin="0,14,0,4"
+                <!-- ==================== 显示适配 ====================
+                     面向高分屏（2.8K / 3.2K / 4K）与低分屏高缩放（1080p 150%+）两种情况。
+                     界面缩放会等比放大所有文字与控件，独立于 Windows 的系统缩放。 -->
+                <TextBlock Text="显示适配" FontWeight="SemiBold" Margin="0,18,0,4"
                            Foreground="{DynamicResource GlassTextBrush}"/>
-                <Slider Value="{Binding Config.WindowWidth}" Minimum="900" Maximum="1600" Width="320" HorizontalAlignment="Left"
+
+                <TextBlock x:Name="ScreenInfoText" FontSize="11.5" TextWrapping="Wrap"
+                           Width="420" HorizontalAlignment="Left" Margin="0,0,0,6"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
+                <TextBlock Text="{Binding Config.UiScale, StringFormat=界面缩放：{0:F2} 倍}" Margin="0,4,0,4"
+                           Foreground="{DynamicResource GlassTextBrush}"/>
+                <Slider Value="{Binding Config.UiScale}" Minimum="0.8" Maximum="1.6" TickFrequency="0.05"
+                        IsSnapToTickEnabled="True" Width="320" HorizontalAlignment="Left"
+                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                        ToolTip="整体放大或缩小界面。高分屏觉得字小就调大；低分屏放不下就调小。"/>
+                <TextBlock Text="1.00 为默认。2.8K / 4K 屏幕觉得字偏小可调到 1.15~1.30；1080p 且系统缩放 150% 以上可调到 0.85~0.95。"
+                           FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" Margin="0,4,0,0"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
+                <CheckBox Content="启动时自动适配屏幕（推荐）" IsChecked="{Binding Config.AutoFitWindow}" Margin="0,12,0,4"/>
+                <TextBlock Text="开启后，窗口尺寸会按当前屏幕可用区域自动选择合适的大小，避免超出屏幕或留白过多。"
+                           FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
+                <TextBlock Text="{Binding Config.WindowWidth, StringFormat=窗口宽度：{0}}" Margin="0,12,0,4"
+                           Foreground="{DynamicResource GlassTextBrush}"/>
+                <Slider x:Name="WindowWidthSlider" Value="{Binding Config.WindowWidth}"
+                        Minimum="900" Maximum="1600" Width="320" HorizontalAlignment="Left"
                         Style="{StaticResource MaterialDesignDiscreteSlider}"/>
 
                 <TextBlock Text="{Binding Config.WindowHeight, StringFormat=窗口高度：{0}}" Margin="0,14,0,4"
                            Foreground="{DynamicResource GlassTextBrush}"/>
-                <Slider Value="{Binding Config.WindowHeight}" Minimum="600" Maximum="1000" Width="320" HorizontalAlignment="Left"
+                <Slider x:Name="WindowHeightSlider" Value="{Binding Config.WindowHeight}"
+                        Minimum="600" Maximum="1000" Width="320" HorizontalAlignment="Left"
                         Style="{StaticResource MaterialDesignDiscreteSlider}"/>
+                <TextBlock x:Name="WindowSizeHintText" FontSize="11.5" TextWrapping="Wrap"
+                           Width="420" HorizontalAlignment="Left" Margin="0,4,0,0"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                <Button Style="{StaticResource MaterialDesignOutlinedButton}" Content="按当前屏幕重置尺寸"
+                        Margin="0,8,0,0" Padding="14,4" HorizontalAlignment="Left" Click="ResetWindowSize_Click"/>
 
                 <CheckBox Content="显示虚拟键盘" IsChecked="{Binding Config.ShowVirtualKeyboard}" Margin="0,16,0,6"/>
                 <CheckBox Content="开启按键音效" IsChecked="{Binding Config.EnableSound}" Margin="0,6,0,6"/>

@@ -45,7 +45,11 @@ public static class SqliteSchemaUpgrader
                 ("ShowWubiBigChar", "INTEGER NOT NULL DEFAULT 1"),
                 ("SpeakWubiHint", "INTEGER NOT NULL DEFAULT 0"),
                 ("FontSizeBeforeElderMode", "REAL NOT NULL DEFAULT 22"),
-                ("SpeechRateBeforeElderMode", "INTEGER NOT NULL DEFAULT 0")
+                ("SpeechRateBeforeElderMode", "INTEGER NOT NULL DEFAULT 0"),
+                // 显示适配：默认值与 AppConfig 保持一致，
+                // 保证既有用户升级后界面外观不变（UiScale 默认 1.0）。
+                ("UiScale", "REAL NOT NULL DEFAULT 1.0"),
+                ("AutoFitWindow", "INTEGER NOT NULL DEFAULT 1")
             }
         };
 
