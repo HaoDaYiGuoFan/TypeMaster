@@ -65,6 +65,9 @@
                                 Command="{Binding SelectTypeCommand}" CommandParameter="{x:Static core:PracticeType.SpeedTest}" FontSize="13"/>
 
                         <TextBlock Text="难度：" VerticalAlignment="Center" Margin="20,0,8,0" FontSize="13"/>
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="入门" Tag="{x:Static core:Difficulty.Entry}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Entry}" FontSize="13"
+                                ToolTip="面向刚接触键盘的初学者（小学生 / 长辈）：文本更短、节奏更慢、更容易达标"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="简单" Tag="{x:Static core:Difficulty.Easy}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Easy}" FontSize="13"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="普通" Tag="{x:Static core:Difficulty.Normal}"
@@ -72,33 +75,61 @@
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="困难" Tag="{x:Static core:Difficulty.Hard}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hard}" FontSize="13"/>
 
-                        <!-- 折叠箭头：点击展开 1~10 级难度细分滑动条 -->
-                        <ToggleButton x:Name="DifficultyExpander" Style="{StaticResource MaterialDesignFlatButton}"
-                                      Width="28" Height="28" Padding="0" Margin="6,0,0,0"
-                                      ToolTip="展开 / 收起难度细分（1~10 级）">
-                            <materialDesign:PackIcon Width="18" Height="18">
-                                <materialDesign:PackIcon.Style>
-                                    <Style TargetType="materialDesign:PackIcon">
-                                        <Setter Property="Kind" Value="ChevronDown"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsChecked, ElementName=DifficultyExpander}" Value="True">
-                                                <Setter Property="Kind" Value="ChevronUp"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </materialDesign:PackIcon.Style>
-                            </materialDesign:PackIcon>
+                        <!-- 难度细分折叠按钮：
+                             改前只有一个 28×28 的箭头图标，用户看不出是干什么的。
+                             现在做成带文字的胶囊，并把当前档位与级数写在按钮上，
+                             收起状态下也能一眼看到"当前是几级"。 -->
+                        <ToggleButton x:Name="DifficultyExpander" Margin="10,0,0,0"
+                                      Padding="10,4" MinWidth="0" VerticalAlignment="Center"
+                                      Cursor="Hand"
+                                      Background="Transparent"
+                                      BorderBrush="{DynamicResource GlassDividerBrush}"
+                                      BorderThickness="1"
+                                      ToolTip="点击展开更细的难度级别（共 13 级）；也可不展开，直接用左边的四个档位按钮">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Bd" CornerRadius="14"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon x:Name="Chev" Kind="ChevronDown"
+                                                                     Width="16" Height="16"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                                            <TextBlock x:Name="Txt" Margin="5,0,0,0" FontSize="12.5"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource GlassTextSecondaryBrush}"
+                                                       Text="级别细分"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <!-- 展开时：箭头翻转、文字改为"收起"、底色加重，状态一眼可辨 -->
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Chev" Property="Kind" Value="ChevronUp"/>
+                                            <Setter TargetName="Txt" Property="Text" Value="收起细分"/>
+                                            <Setter TargetName="Bd" Property="Background"
+                                                    Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background"
+                                                    Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
                         </ToggleButton>
                     </StackPanel>
 
-                    <!-- 难度细分：1~10 级滑动条，与上方三档按钮双向联动（折叠展开） -->
+                    <!-- 难度细分：1~13 级滑动条，与上方四档按钮双向联动（折叠展开） -->
                     <Border Margin="0,8,0,2" Padding="10,8" CornerRadius="10"
                             Background="{DynamicResource GlassSurfaceStrongBrush}"
                             BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1"
                             Visibility="{Binding IsChecked, ElementName=DifficultyExpander, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="难度细分：" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
-                            <Slider x:Name="DifficultySlider" Width="220" Minimum="1" Maximum="10"
+                            <Slider x:Name="DifficultySlider" Width="220" Minimum="1" Maximum="13"
                                     TickFrequency="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
                                     VerticalAlignment="Center" SmallChange="1" LargeChange="1"
                                     Value="{Binding DifficultyLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

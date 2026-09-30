@@ -22,6 +22,18 @@ public static class WordLibrary
     /// </summary>
     private static readonly Dictionary<Difficulty, List<string>> EnglishWords = new()
     {
+        // 入门档：3~4 字母、绝对常见、小学生认识的词
+        [Difficulty.Entry] = new()
+        {
+            "cat", "dog", "sun", "cup", "bed", "pen", "hat", "box",
+            "bus", "car", "run", "jump", "eat", "red", "blue", "big",
+            "small", "hot", "cold", "new", "ball", "book", "tree", "bird",
+            "fish", "cake", "milk", "hand", "foot", "door", "mom", "dad",
+            "boy", "girl", "kid", "toy", "game", "home", "room", "food",
+            "leg", "arm", "eye", "ear", "nose", "hair", "face", "head",
+            "neck", "toe", "ant", "bee", "pig", "cow", "duck", "frog",
+            "bear", "lion", "goat", "moon",
+        },
         [Difficulty.Easy] = new()
         {
             "cat", "dog", "sun", "run", "red", "box", "cup", "pen", "hat", "map",
@@ -67,6 +79,20 @@ public static class WordLibrary
     /// </summary>
     private static readonly Dictionary<Difficulty, List<string>> ChineseWords = new()
     {
+        // 入门档：双字词为主，都是日常最基础的
+        [Difficulty.Entry] = new()
+        {
+            "妈妈", "爸爸", "爷爷", "奶奶", "哥哥", "姐姐", "弟弟", "妹妹",
+            "老师", "同学", "上学", "放学", "上课", "下课", "作业", "考试",
+            "语文", "数学", "体育", "音乐", "早上", "中午", "晚上", "今天",
+            "明天", "昨天", "现在", "时间", "上午", "下午", "苹果", "香蕉",
+            "西瓜", "米饭", "面条", "鸡蛋", "牛奶", "面包", "青菜", "水果",
+            "小猫", "小狗", "小鸟", "小鱼", "老虎", "大象", "猴子", "兔子",
+            "蝴蝶", "蜜蜂", "太阳", "月亮", "星星", "白云", "下雨", "下雪",
+            "春天", "夏天", "秋天", "冬天", "学校", "教室", "家里", "公园",
+            "医院", "商店", "马路", "车站", "房间", "大门", "红色", "黄色",
+            "蓝色", "绿色", "白色", "黑色", "大小", "多少", "高矮", "长短",
+        },
         [Difficulty.Easy] = new()
         {
             "同学", "老师", "教室", "黑板", "铅笔", "橡皮", "书包", "作业", "语文", "数学",
@@ -105,6 +131,14 @@ public static class WordLibrary
     /// <summary>英文句子：用于「句子」级练习，长度随难度增加。</summary>
     private static readonly Dictionary<Difficulty, List<string>> EnglishSentences = new()
     {
+        // 入门档：单句、三到四词、无复杂标点
+        [Difficulty.Entry] = new()
+        {
+            "I am a boy.", "She is my mom.", "It is a cat.", "We like to play.", "The sun is hot.", "I can see it.",
+            "He is my dad.", "They are at home.", "This is my pen.", "That is a tree.", "I have a ball.", "You are my friend.",
+            "The dog can run.", "My book is new.", "We go to school.", "It is very cold.", "She has a red hat.", "I like my room.",
+            "The bird can fly.", "Let us go now.",
+        },
         [Difficulty.Easy] = new()
         {
             "I have a red bag.",
@@ -153,6 +187,14 @@ public static class WordLibrary
     /// <summary>中文句子：用于「句子」级练习，长度随难度增加。</summary>
     private static readonly Dictionary<Difficulty, List<string>> ChineseSentences = new()
     {
+        // 入门档：四到八字，一句话说完
+        [Difficulty.Entry] = new()
+        {
+            "我爱我的家。", "今天天气很好。", "小猫在睡觉。", "我们一起去玩。", "妈妈做的饭很香。", "我在写作业。",
+            "树上有只小鸟。", "天上有白云。", "弟弟在学走路。", "我喜欢看书。", "爷爷在浇花。", "放学回家吧。",
+            "这个苹果很甜。", "我会自己穿衣服。", "老师夸我了。", "下雨了要打伞。", "我们一起唱歌。", "小狗跑得很快。",
+            "晚上早点睡。", "明天见。",
+        },
         [Difficulty.Easy] = new()
         {
             "我喜欢在春天里放风筝。",
@@ -263,19 +305,52 @@ public static class WordLibrary
 
     #region 私有工具
 
-    /// <summary>细分等级 -> 本轮单词个数：1 级 8 个，10 级 40 个，线性递增。</summary>
-    private static int GetWordCount(int level)
+    /// <summary>
+    /// 细分等级 → 本轮单词个数。
+    ///
+    /// 分档给量（而非线性）：入门档要给得少——刚接触键盘的孩子
+    /// 一次打 4~6 个词刚好，多了会疲劳也会挫败。
+    /// </summary>
+    private static int GetWordCount(int level) => DifficultyScale.Clamp(level) switch
     {
-        int lv = DifficultyScale.Clamp(level);
-        return 8 + (lv - DifficultyScale.Min) * 3;
-    }
+        // 入门档（1~3 级）：少而精
+        1 => 4,
+        2 => 5,
+        3 => 6,
+        // 简单档（4~6 级）
+        4 => 10,
+        5 => 12,
+        6 => 14,
+        // 普通档（7~10 级）
+        7 => 18,
+        8 => 22,
+        9 => 26,
+        10 => 30,
+        // 困难档（11~13 级）
+        11 => 36,
+        12 => 40,
+        _ => 44
+    };
 
-    /// <summary>细分等级 -> 本轮句子条数：1 级 2 句，10 级 9 句。</summary>
-    private static int GetSentenceCount(int level)
+    /// <summary>
+    /// 细分等级 → 本轮句子条数。入门档只给 2 句，先打完再继续。
+    /// </summary>
+    private static int GetSentenceCount(int level) => DifficultyScale.Clamp(level) switch
     {
-        int lv = DifficultyScale.Clamp(level);
-        return 2 + (lv - DifficultyScale.Min) * 7 / 9;
-    }
+        1 => 2,
+        2 => 2,
+        3 => 3,
+        4 => 4,
+        5 => 5,
+        6 => 5,
+        7 => 6,
+        8 => 7,
+        9 => 7,
+        10 => 8,
+        11 => 9,
+        12 => 10,
+        _ => 11
+    };
 
     /// <summary>从池中不放回地随机抽取 count 个（count 超过池容量时取全池）。</summary>
     private static List<string> PickRandom(List<string> pool, int count)

@@ -100,11 +100,14 @@
                     <!-- 左侧：macOS 交通灯（带常显功能符号） + 应用图标 -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,16,0">
                         <Button Style="{StaticResource MacWindowButton}" Background="#FF5F57"
-                                Content="&#xE8BB;" ToolTip="关闭" Click="CloseWindow"/>
+                                Content="&#xE8BB;" Click="CloseWindow"
+                        ToolTip="关闭窗口（快捷键 Alt+F4）"/>
                         <Button Style="{StaticResource MacWindowButton}" Background="#FEBC2E"
-                                Content="&#xE921;" ToolTip="最小化" Click="MinimizeWindow"/>
+                                Content="&#xE921;" Click="MinimizeWindow"
+                        ToolTip="最小化到任务栏（点任务栏图标可恢复）"/>
                         <Button x:Name="MaximizeButton" Style="{StaticResource MacWindowButton}" Background="#28C840"
-                                Content="&#xE922;" ToolTip="最大化 / 还原" Click="MaximizeRestoreWindow"/>
+                                Content="&#xE922;" Click="MaximizeRestoreWindow"
+                        ToolTip="铺满屏幕 / 恢复原大小（也可双击顶部空白处切换）"/>
                         <materialDesign:PackIcon Kind="KeyboardVariant" Width="22" Height="22"
                                                 Foreground="#FF1976D2" VerticalAlignment="Center" Margin="14,0,0,0"/>
                     </StackPanel>

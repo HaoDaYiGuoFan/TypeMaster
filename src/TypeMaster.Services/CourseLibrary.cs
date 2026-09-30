@@ -24,6 +24,15 @@ public enum CourseStage
     Article = 4,
 
     /// <summary>
+    /// 入门（零基础支线，面向刚接触键盘的小学生）。
+    ///
+    /// 与主线分开的理由：主线从「指法入门」直接进入字母键位练习，
+    /// 对刚学键盘的孩子仍偏快。这条支线用最短的句子（10~20 字）
+    /// 先建立"我能打完一段"的信心，再回主线练指法。
+    /// </summary>
+    Entry = 6,
+
+    /// <summary>
     /// 五笔入门（零基础支线）。
     ///
     /// 为什么单独成阶段而不插进主线的顺序里：
@@ -236,7 +245,20 @@ public static class CourseLibrary
 
         new("wubi-basic-text", CourseStage.WubiBasics, 26, "五笔入门 · 打一小段话",
             "用五笔完整打出几句话。做到这一步，日常用五笔记事已经没问题。",
-            PracticeType.Wubi, Difficulty.Hard, 8, LessonTextSource.Wubi)
+            PracticeType.Wubi, Difficulty.Hard, 8, LessonTextSource.Wubi),
+
+        // ---------- 入门支线（零基础，面向刚接触键盘的小学生）----------
+        new("entry-first", CourseStage.Entry, 27, "入门 · 第一次打字",
+            "只有短短的几句话，标点也很少。慢慢打，打对就好，完全不用管速度。",
+            PracticeType.Chinese, Difficulty.Entry, 1, LessonTextSource.ChineseSentences),
+
+        new("entry-words", CourseStage.Entry, 28, "入门 · 认认词",
+            "都是最常见的小词，两三下就能打完一个。打完一个就换下一个。",
+            PracticeType.ChineseWord, Difficulty.Entry, 2, LessonTextSource.ChineseWords),
+
+        new("entry-sentence", CourseStage.Entry, 29, "入门 · 打整句",
+            "一个完整的句子，有标点。到这一关应该已经不用一直看键盘了。",
+            PracticeType.Chinese, Difficulty.Entry, 3, LessonTextSource.ChineseSentences)
     };
 
     #endregion 关卡表
@@ -288,6 +310,13 @@ public static class CourseLibrary
             return IsUnlockedInWubiBasics(lesson, progress);
         }
 
+        // 入门支线同样独立：让刚学键盘的孩子可以直接进入，
+        // 不必先通关主线的指法练习（那些对他可能偏难）。
+        if (lesson.Stage == CourseStage.Entry)
+        {
+            return IsUnlockedInChildStage(lesson, CourseStage.Entry, progress);
+        }
+
         CourseLesson? prev = GetPrevious(lesson);
         if (prev == null)
         {
@@ -303,8 +332,19 @@ public static class CourseLibrary
     /// <param name="progress">当前进度</param>
     /// <returns>是否已解锁</returns>
     private static bool IsUnlockedInWubiBasics(CourseLesson lesson, CourseProgress? progress)
+        => IsUnlockedInChildStage(lesson, CourseStage.WubiBasics, progress);
+
+    /// <summary>
+    /// 某条支线内部的解锁判定：支线第一关始终可玩，
+    /// 其余要求支线内前一关已通关（不受主线进度影响）。
+    /// </summary>
+    /// <param name="lesson">待判断的关卡（须属于该支线）</param>
+    /// <param name="stage">支线阶段</param>
+    /// <param name="progress">当前进度</param>
+    /// <returns>是否已解锁</returns>
+    private static bool IsUnlockedInChildStage(CourseLesson lesson, CourseStage stage, CourseProgress? progress)
     {
-        var chain = Lessons.Where(l => l.Stage == CourseStage.WubiBasics)
+        var chain = Lessons.Where(l => l.Stage == stage)
                            .OrderBy(l => l.StageOrder)
                            .ToList();
         int idx = chain.FindIndex(l => l.Id == lesson.Id);
@@ -324,6 +364,7 @@ public static class CourseLibrary
         CourseStage.Word => "单词练习",
         CourseStage.Sentence => "句子练习",
         CourseStage.WubiBasics => "五笔入门（零基础）",
+        CourseStage.Entry => "入门（零基础）",
         _ => "文章练习"
     };
 
@@ -335,6 +376,7 @@ public static class CourseLibrary
         CourseStage.Word => "从单个字母走向整词输入，开始建立连击节奏。",
         CourseStage.Sentence => "加入空格与标点，为整篇输入做准备。",
         CourseStage.WubiBasics => "专为零基础准备，从一键成字开始。屏幕会逐码提示该按哪个键，不必先背字根。",
+        CourseStage.Entry => "面向刚接触键盘的小学生：句子最短、节奏最慢，先学会打对，再考虑打快。",
         _ => "整篇对照输入，检验速度、准确率与持久力。"
     };
 

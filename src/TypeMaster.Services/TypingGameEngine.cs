@@ -52,6 +52,24 @@ public class TypingGameEngine
     /// <summary>生死时速：每完整消灭一个单词，玩家选手前进的距离（像素）。</summary>
     private const double PlayerAdvancePx = 55;
 
+    /// <summary>
+    /// 单个游戏目标在界面上的实际高度（像素）。
+    ///
+    /// 为什么要在这里写死一个常量：目标模板由 GamePlayPage.xaml 的
+    /// ItemsControl.ItemTemplate 定义，内容是「72px 精灵 + 约 37px 单词条」
+    /// 再加少量外边距，合计约 109px。
+    /// 引擎在计算"目标该出现在哪个 Y"时必须知道这个高度，否则会把
+    /// 单词条算到可视区之外。
+    ///
+    /// 历史缺陷：青蛙吃虫原本用 <c>Y = Height - 70</c>，
+    /// 于是目标底部落在 <c>Height + 39</c>，单词条被 PlayArea 的
+    /// ClipToBounds 整条裁掉——表现为"只见虫子、不见单词"。
+    /// </summary>
+    private const double TargetVisualHeight = 109;
+
+    /// <summary>目标与游戏区底部之间保留的余量，避免贴边或被圆角切到。</summary>
+    private const double TargetBottomMargin = 6;
+
     // 当前局参数（由 Configure 填充）
     private int _lives;
     private double _spawnIntervalMs;
@@ -191,6 +209,9 @@ public class TypingGameEngine
             {
                 GameMode.SpaceWar => t.Y >= Height - 50,
                 GameMode.CatchThief => t.X < -60 || t.X > Width + 60,
+                // 危险判定：目标横向接近青蛙所在的中线。
+                // 青蛙画在游戏区底部中央，目标也从底部中央穿过，
+                // 因此只需横向距离判定即可（纵向已被上面的 Y 计算固定在底部带）。
                 GameMode.FrogBug => Math.Abs(t.X - Width / 2) <= 40,
                 GameMode.WhackMole => t.AgeMs >= t.LifetimeMs,
                 GameMode.BalloonPop => t.Y <= -60,   // 气球飘出顶部
@@ -293,6 +314,14 @@ public class TypingGameEngine
         // 面向刚接触电脑的三四年级小朋友：速度很慢、刷怪很稀、同屏很少、生命很多。
         (int lives, double spawn, int max, double speed, double mole) p = (Mode, Difficulty) switch
         {
+            // ---------- 入门档：面向刚学键盘的孩子，节奏最慢、生命最多 ----------
+            (GameMode.SpaceWar, Difficulty.Entry) => (10, 5600, 1, 9, 0),
+            (GameMode.WhackMole, Difficulty.Entry) => (10, 4200, 1, 0, 7000),
+            (GameMode.CatchThief, Difficulty.Entry) => (10, 6000, 1, 18, 0),
+            (GameMode.FrogBug, Difficulty.Entry) => (10, 5600, 1, 10, 0),
+            (GameMode.BalloonPop, Difficulty.Entry) => (10, 5800, 1, 12, 0),
+            (GameMode.LifeDeathSpeed, Difficulty.Entry) => (3, 1100, 1, 34, 0),
+
             (GameMode.SpaceWar, Difficulty.Easy) => (8, 4200, 2, 15, 0),
             (GameMode.SpaceWar, Difficulty.Normal) => (7, 3400, 3, 23, 0),
             (GameMode.SpaceWar, Difficulty.Hard) => (6, 2700, 4, 33, 0),
@@ -366,7 +395,9 @@ public class TypingGameEngine
             case GameMode.FrogBug:
                 bool l2 = _rand.Next(2) == 0;
                 t.X = l2 ? -40 : Width + 40;
-                t.Y = Height - 70;
+                // 让【整个目标】完整落在游戏区内：底部对齐到"高度 - 余量"，
+                // 顶部再减去自身高度。这样单词条不会被裁掉。
+                t.Y = Height - TargetVisualHeight - TargetBottomMargin;
                 t.Vx = (l2 ? 1 : -1) * _speedPx;
                 t.Vy = 0;
                 break;
@@ -418,11 +449,17 @@ public class TypingGameEngine
     /// </summary>
     private int MaxWordLength => _level switch
     {
-        1 => 4,
-        2 or 3 => 5,
+        // 入门档（1~3 级）：单词更短，刚学键盘的孩子不必去找长词
+        1 => 3,
+        2 => 4,
+        3 => 4,
+        // 简单档（4~6 级）
         4 or 5 => 6,
-        6 or 7 => 8,
-        8 or 9 => 10,
+        6 => 7,
+        // 普通档（7~10 级）
+        7 or 8 => 8,
+        9 or 10 => 10,
+        // 困难档（11~13 级）：不再限制
         _ => int.MaxValue
     };
 

@@ -30,6 +30,23 @@ public static class GradeScale
         _ => 20d
     };
 
+    /// <summary>
+    /// 入门档（<see cref="Difficulty.Entry"/>）的基准速度。
+    ///
+    /// 为什么单独给：入门档面向刚接触键盘的小学生，
+    /// 若沿用「1 级 = 20 WPM」的门槛，他们几乎不可能拿到 B 级，
+    /// 会一直在最低评级徘徊，打击积极性。
+    /// 这里取常规基准的约三分之一，让"打对就能达标"。
+    /// </summary>
+    private static double EntryBaseSpeed(PracticeType type) => type switch
+    {
+        PracticeType.English or PracticeType.EnglishWord => 7d,
+        PracticeType.Chinese or PracticeType.ChineseWord => 10d,
+        PracticeType.Wubi => 4d,
+        PracticeType.SpeedTest => 9d,
+        _ => 7d
+    };
+
     /// <summary>细分等级每升 1 级，基准速度的增量。</summary>
     private static double SpeedStep(PracticeType type) => type switch
     {
@@ -49,7 +66,19 @@ public static class GradeScale
     public static double GetBaselineSpeed(PracticeType type, int level)
     {
         int lv = DifficultyScale.Clamp(level);
-        return BaseSpeed(type) + (lv - DifficultyScale.Min) * SpeedStep(type);
+        Difficulty diff = DifficultyScale.ToDifficulty(lv);
+
+        if (diff == Difficulty.Entry)
+        {
+            // 入门档：低起点 + 小步长，1~3 级在 7~11 WPM（英文）之间平缓上升
+            var (lo, _) = DifficultyScale.RangeOf(Difficulty.Entry);
+            double entryStep = SpeedStep(type) * 0.5;
+            return EntryBaseSpeed(type) + (lv - lo) * entryStep;
+        }
+
+        // 简单档起步即按"常规基准的 1 级水平"计算，保证与入门档衔接平滑
+        var (simpleFrom, _) = DifficultyScale.RangeOf(Difficulty.Easy);
+        return BaseSpeed(type) + (lv - simpleFrom + 1) * SpeedStep(type);
     }
 
     #endregion 基准速度

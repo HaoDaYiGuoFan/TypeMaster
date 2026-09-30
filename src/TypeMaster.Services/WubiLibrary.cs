@@ -598,8 +598,24 @@ public static class WubiLibrary
     /// <returns>练习用中文文本</returns>
     public static string GetRandomPractice(Difficulty difficulty, int level)
     {
-        // 目标单元数：1 级约 8 字，10 级约 40 字，线性递增
-        int unitCount = 6 + DifficultyScale.Clamp(level) * 4;
+        // 目标单元数：按档给量。入门档只给 6~10 字，
+        // 五笔初学者每字要按 1~4 个键，10 字已经是不小的量。
+        int unitCount = DifficultyScale.Clamp(level) switch
+        {
+            1 => 6,
+            2 => 8,
+            3 => 10,
+            4 => 14,
+            5 => 16,
+            6 => 18,
+            7 => 22,
+            8 => 26,
+            9 => 30,
+            10 => 34,
+            11 => 38,
+            12 => 42,
+            _ => 46
+        };
 
         var keys = CharCodes.Keys.ToList();
         var rand = new System.Random();

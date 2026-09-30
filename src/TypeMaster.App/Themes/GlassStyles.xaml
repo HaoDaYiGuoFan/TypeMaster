@@ -62,23 +62,36 @@
 
     <!-- ==================== macOS 交通灯窗口按钮 ==================== -->
 
+    <!--
+        窗口控制按钮（关闭 / 最小化 / 最大化）。
+
+        尺寸说明：圆点由 13×13 放大到 18×18、符号字号由 7.5 放大到 11.5。
+        放大原因：原尺寸在 2.8K / 4K 屏幕上很难看清，也不容易点中；
+        这三个按钮是关窗 / 最小化的唯一入口（窗体是无边框的），
+        做小了对不熟悉电脑的用户不友好。
+    -->
     <Style x:Key="MacWindowButton" TargetType="Button">
-        <Setter Property="Width" Value="13"/>
-        <Setter Property="Height" Value="13"/>
-        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="Margin" Value="5,0"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <!-- 常显窗口功能符号：使用系统内置 Segoe MDL2 Assets 字体，初学者无需悬浮也能分辨 -->
+        <!-- 常显窗口功能符号：使用系统内置 Segoe MDL2 Assets 字体，无需悬浮也能分辨 -->
         <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-        <Setter Property="FontSize" Value="7.5"/>
-        <Setter Property="Foreground" Value="#99FFFFFF"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Foreground" Value="#E6FFFFFF"/>
+        <!-- 悬浮提示：写明作用与快捷键，鼠标移上去就能看懂 -->
+        <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
+        <Setter Property="ToolTipService.ShowDuration" Value="8000"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid Width="13" Height="13">
+                    <Grid Width="18" Height="18">
+                        <!-- 外圈：悬浮时显示，让"这个圆点是可点的"更明显 -->
+                        <Ellipse x:Name="Halo" Fill="Transparent" Margin="-2"/>
                         <Ellipse x:Name="Dot" Fill="{TemplateBinding Background}"/>
-                        <Ellipse x:Name="Ring" Stroke="#26000000" StrokeThickness="0.6" Fill="Transparent"/>
+                        <Ellipse x:Name="Ring" Stroke="#38000000" StrokeThickness="0.8" Fill="Transparent"/>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                           Margin="0,-0.5,0,0" IsHitTestVisible="False"
                                           TextBlock.FontFamily="{TemplateBinding FontFamily}"
@@ -86,12 +99,14 @@
                                           TextBlock.Foreground="{TemplateBinding Foreground}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- 悬浮：符号变纯白 + 出现高光外圈 + 描边加深，反馈明确 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Ring" Property="Stroke" Value="#59000000"/>
-                            <Setter Property="Foreground" Value="#F2FFFFFF"/>
+                            <Setter TargetName="Ring" Property="Stroke" Value="#66000000"/>
+                            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                            <Setter TargetName="Halo" Property="Fill" Value="#33FFFFFF"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Dot" Property="Opacity" Value="0.6"/>
+                            <Setter TargetName="Dot" Property="Opacity" Value="0.62"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

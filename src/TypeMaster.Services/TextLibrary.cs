@@ -14,6 +14,30 @@ public static class TextLibrary
 {
     private static readonly Dictionary<Difficulty, List<string>> EnglishTexts = new()
     {
+        // 入门档：只用最基础的词，句子不超过 8 个词，无从句
+        [Difficulty.Entry] = new()
+        {
+            @"My name is Tom. I am ten. I have a dog. It is white. I like it.",
+            @"I go to school. I like my school. My teacher is kind.",
+            @"The sun is up. It is a nice day. I play in the park.",
+            @"I have a cat. It is small. It likes to sleep all day.",
+            @"This is my book. It is red. I read it every day.",
+            @"I like milk. I like bread. I eat them for breakfast.",
+            @"My mom is a nurse. She works in a big hospital.",
+            @"We have a tree. Birds live in it. They sing in the morning.",
+            @"It is cold. I wear a coat. I wear a hat too.",
+            @"I can run fast. My friend can run fast too. We race.",
+            @"I see a fish. It is in the water. It swims away.",
+            @"The sky is blue. The grass is green. I like this day.",
+            @"I have two hands. I have ten fingers. I use them to type.",
+            @"My dad has a car. It is old but it runs well.",
+            @"I like to draw. I draw a house. I draw a tree too.",
+            @"We eat rice. We eat soup. We eat fruit after that.",
+            @"I love my family. We are happy. We help each other.",
+            @"The dog runs. The cat walks. The bird flies away.",
+            @"I am six years old. Next year I will be seven.",
+            @"Look at the moon. It is big and round. It is very bright."
+        },
         [Difficulty.Easy] = new()
         {
             // Easy English: ~80-150 words, simple sentences, grades 3-4 level
@@ -55,6 +79,30 @@ public static class TextLibrary
 
     private static readonly Dictionary<Difficulty, List<string>> ChineseTexts = new()
     {
+        // 入门档（面向刚接触键盘的小学生）：句子短、用词基础、标点简单
+        [Difficulty.Entry] = new()
+        {
+            "我叫小明。今年七岁。我喜欢画画。也喜欢唱歌。",
+            "天上有很多星星。月亮圆圆的。晚上很安静。",
+            "妈妈在做饭。爸爸在看报。我在写作业。",
+            "小猫在睡觉。小狗在跑。小鸟在唱歌。",
+            "今天很热。我想吃西瓜。西瓜很甜。",
+            "树上有个鸟窝。里面有小鸟。鸟妈妈去捉虫了。",
+            "我有一只小狗。它叫豆豆。它很喜欢我。",
+            "爷爷在看电视。奶奶在浇花。我在吃苹果。",
+            "早上我起得很早。先刷牙。再洗脸。然后吃早饭。",
+            "春天来了。花开了。草绿了。燕子飞回来了。",
+            "下雨了。我打着伞去上学。路上有水坑。",
+            "晚上我读故事书。读到一半就困了。妈妈给我关灯。",
+            "我喜欢上体育课。可以跑步。可以打球。",
+            "我帮妈妈扫地。妈妈夸我真棒。我很开心。",
+            "弟弟在学走路。他走得不稳。我扶着他。",
+            "天上飞过一架飞机。声音很响。我抬头去看。",
+            "奶奶给了我一块糖。我分了一半给妹妹。",
+            "放学了。我和同学一起回家。路上聊今天的事。",
+            "我有一本新书。封面很好看。我打算明天开始读。",
+            "爷爷种了很多菜。有白菜。有萝卜。还有西红柿。"
+        },
         [Difficulty.Easy] = new()
         {
             "春天来了，小草从泥土里探出嫩绿的小脑袋。花儿也争先恐后地开放了，有红的、黄的、紫的，五颜六色，美丽极了。蝴蝶在花丛中飞来飞去，好像在跳舞一样。",
@@ -383,7 +431,7 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
         return list[idx];
     }
 
-    #region 难度细分（1~10 级）
+    #region 难度细分（1~13 级）
 
     /// <summary>
     /// 1~10 级细分难度对应的目标文本长度（字符数），等级越高文本越长。
@@ -393,7 +441,19 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
     /// 现整体加长约一倍：最低等级也有约两行，高等级足够铺满一屏，
     /// 配合 <c>TypingViewModel</c> 的自动续接，练习可以一直进行下去。
     /// </summary>
-    private static readonly int[] LevelTargetLengths = { 80, 140, 200, 280, 360, 450, 550, 660, 800, 950 };
+    private static readonly int[] LevelTargetLengths =
+    {
+        // 入门档（1~3 级）：面向刚接触键盘的小学生。
+        // 1 级约 50 字符（两三行短句），刻意比原来的最低档还短，
+        // 让初学者一屏就能打完，先建立"我能打完"的信心。
+        50, 65, 80,
+        // 简单档（4~6 级）
+        140, 170, 200,
+        // 普通档（7~10 级）
+        280, 320, 360, 450,
+        // 困难档（11~13 级）
+        550, 660, 800
+    };
 
     /// <summary>
     /// 按细分等级获取目标文本长度（字符数）。
@@ -561,7 +621,7 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
         return cut >= maxLength / 2 ? head[..(cut + 1)] : head;
     }
 
-    #endregion 难度细分（1~10 级）
+    #endregion 难度细分（1~13 级）
 
     /// <summary>
     /// 打字小游戏单词池：改由 <see cref="GameWords"/> 提供（共 4700 词）。

@@ -38,6 +38,9 @@
                                    TextWrapping="Wrap" Margin="0,4,0,0"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="入门" Tag="{x:Static core:Difficulty.Entry}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Entry}"
+                                ToolTip="最简单的档位：单词更短、节奏更慢、生命更多，适合刚学键盘的孩子"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="简单" Tag="{x:Static core:Difficulty.Easy}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Easy}"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="普通" Tag="{x:Static core:Difficulty.Normal}"
@@ -45,22 +48,47 @@
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="困难" Tag="{x:Static core:Difficulty.Hard}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hard}"/>
 
-                        <!-- 折叠箭头：点击展开 1~10 级难度细分滑动条，低分屏下默认收起 -->
-                        <ToggleButton x:Name="DifficultyExpander" Style="{StaticResource MaterialDesignFlatButton}"
-                                      Width="28" Height="28" Padding="0" Margin="4,3,0,3"
-                                      ToolTip="展开 / 收起难度细分（1~10 级）">
-                            <materialDesign:PackIcon Width="18" Height="18">
-                                <materialDesign:PackIcon.Style>
-                                    <Style TargetType="materialDesign:PackIcon">
-                                        <Setter Property="Kind" Value="ChevronDown"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsChecked, ElementName=DifficultyExpander}" Value="True">
-                                                <Setter Property="Kind" Value="ChevronUp"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </materialDesign:PackIcon.Style>
-                            </materialDesign:PackIcon>
+                        <!-- 难度细分折叠按钮：
+                             原来只有一个 28×28 的箭头，看不出用途。
+                             现改为带文字的胶囊，展开状态下文字变为「收起细分」。 -->
+                        <ToggleButton x:Name="DifficultyExpander" Margin="8,3,0,3"
+                                      Padding="10,4" VerticalAlignment="Center" Cursor="Hand"
+                                      Background="Transparent"
+                                      BorderBrush="{DynamicResource GlassDividerBrush}"
+                                      BorderThickness="1"
+                                      ToolTip="点击展开更细的难度级别（共 13 级）；不展开也能直接用左边的四个档位按钮">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Bd" CornerRadius="14"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon x:Name="Chev" Kind="ChevronDown"
+                                                                     Width="15" Height="15"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+                                            <TextBlock x:Name="Txt" Margin="5,0,0,0" FontSize="12"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource GlassTextSecondaryBrush}"
+                                                       Text="难度细分"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Chev" Property="Kind" Value="ChevronUp"/>
+                                            <Setter TargetName="Txt" Property="Text" Value="收起细分"/>
+                                            <Setter TargetName="Bd" Property="Background"
+                                                    Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background"
+                                                    Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
                         </ToggleButton>
 
                         <Button Style="{StaticResource MaterialDesignRaisedButton}" Margin="6,3,3,3" Content="开始"
@@ -85,14 +113,14 @@
                     </TextBlock>
                 </StackPanel>
 
-                <!-- 难度细分：1~10 级滑动条，与三档按钮双向联动（下一局生效，默认折叠） -->
+                <!-- 难度细分：1~13 级滑动条，与四档按钮双向联动（下一局生效，默认折叠） -->
                 <Border Margin="0,10,0,0" Padding="10,8" CornerRadius="10"
                         Background="{DynamicResource GlassSurfaceStrongBrush}"
                         BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1"
                         Visibility="{Binding IsChecked, ElementName=DifficultyExpander, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="难度细分：" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
-                        <Slider Width="220" Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                        <Slider Width="220" Minimum="1" Maximum="13" TickFrequency="1" IsSnapToTickEnabled="True"
                                 TickPlacement="BottomRight" VerticalAlignment="Center" SmallChange="1" LargeChange="1"
                                 Value="{Binding DifficultyLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Style="{StaticResource MaterialDesignDiscreteSlider}"/>
@@ -130,13 +158,62 @@
                     <Ellipse Canvas.Left="18" Canvas.Top="0" Width="30" Height="20" Fill="{DynamicResource CartoonCloud}"/>
                 </Canvas>
                 <!-- 房顶与烟囱：气球从屋后升起 -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="30,0,0,58">
-                    <Rectangle Width="130" Height="56" Fill="{DynamicResource CartoonBuilding}" RadiusX="4" RadiusY="4"/>
-                    <Rectangle Width="16" Height="30" Fill="{DynamicResource CartoonBuilding}" Margin="12,0,0,-58"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,60,58">
-                    <Rectangle Width="100" Height="44" Fill="{DynamicResource CartoonBuilding}" RadiusX="4" RadiusY="4"/>
-                </StackPanel>
+                <!-- 左侧远处楼房：屋顶 + 楼体 + 亮窗。
+                     之前只有一个孤立深色矩形，看起来像"一块深色方砖"；
+                     加上屋顶与窗户后才读得出是建筑，并且降低不透明度让它退到背景里，
+                     不与气球抢视线。 -->
+                <Grid VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="30,0,0,52"
+                      Opacity="0.55">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- 屋顶（三角）：用旋转的正方形拼出尖顶 -->
+                    <Rectangle Grid.Row="0" Width="26" Height="26" Fill="{DynamicResource CartoonBuilding}"
+                               HorizontalAlignment="Center" Margin="0,0,0,-13"
+                               RenderTransformOrigin="0.5,0.5">
+                        <Rectangle.RenderTransform>
+                            <RotateTransform Angle="45"/>
+                        </Rectangle.RenderTransform>
+                    </Rectangle>
+                    <!-- 楼体 -->
+                    <Border Grid.Row="1" Width="130" Height="62" CornerRadius="3"
+                            Background="{DynamicResource CartoonBuilding}">
+                        <!-- 窗户：三行两列，暖黄，像"楼里的灯" -->
+                        <UniformGrid Rows="2" Columns="3" Margin="14,12,14,12">
+                            <Rectangle Width="16" Height="12" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="12" Fill="#33FFFFFF" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="12" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="12" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="12" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="12" Fill="#33FFFFFF" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                        </UniformGrid>
+                    </Border>
+                </Grid>
+                <!-- 右侧远处楼房：比左侧矮一些，形成高低错落 -->
+                <Grid VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,60,52"
+                      Opacity="0.55">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Rectangle Grid.Row="0" Width="20" Height="20" Fill="{DynamicResource CartoonBuilding}"
+                               HorizontalAlignment="Center" Margin="0,0,0,-10"
+                               RenderTransformOrigin="0.5,0.5">
+                        <Rectangle.RenderTransform>
+                            <RotateTransform Angle="45"/>
+                        </Rectangle.RenderTransform>
+                    </Rectangle>
+                    <Border Grid.Row="1" Width="104" Height="50" CornerRadius="3"
+                            Background="{DynamicResource CartoonBuilding}">
+                        <UniformGrid Rows="2" Columns="2" Margin="16,10,16,10">
+                            <Rectangle Width="16" Height="11" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="11" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="11" Fill="#33FFFFFF" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                            <Rectangle Width="16" Height="11" Fill="{DynamicResource CartoonBuildingLit}" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Center"/>
+                        </UniformGrid>
+                    </Border>
+                </Grid>
                 <!-- 装饰气球：缓慢上下浮动 -->
                 <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,120,90,0">
                     <Grid.RenderTransform><TranslateTransform/></Grid.RenderTransform>
@@ -448,7 +525,9 @@
                 </Ellipse>
 
                 <!-- 青蛙守门员：中线待命，呼吸缩放 + 眨眼睛 -->
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,16" Width="120" Height="92">
+                <!-- 青蛙：守在底部中央。Margin 与引擎里的 TargetVisualHeight 配合——
+                     虫子从底部这条带穿过，单词条显示在青蛙上方，两者不重叠。 -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14" Width="120" Height="92">
                     <Grid.RenderTransform><ScaleTransform/></Grid.RenderTransform>
                     <Grid.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard>
                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1" To="1.07" Duration="0:0:1.6" AutoReverse="True" RepeatBehavior="Forever"/>
