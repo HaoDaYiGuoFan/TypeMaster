@@ -11,10 +11,12 @@
     <!-- ==================== 玻璃质感基础画刷 ==================== -->
 
     <!-- 窗体玻璃底色：淡蓝 → 淡青的柔和渐变，保留透明度让桌面透出，形成 macOS 亚克力观感 -->
+    <!-- 与 ThemeManager.ApplyGlassPalette 保持一致：不透明的偏白渐变。
+         之前这里是半透明（alpha 0x80~0xD9），桌面壁纸会透过来把整窗染灰。 -->
     <LinearGradientBrush x:Key="GlassWindowBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#D9F4F8FF" Offset="0"/>
-        <GradientStop Color="#CDE9F6FF" Offset="0.45"/>
-        <GradientStop Color="#D8F1F3FF" Offset="1"/>
+        <GradientStop Color="#FFFCFDFE" Offset="0"/>
+        <GradientStop Color="#FFF5F9FD" Offset="0.45"/>
+        <GradientStop Color="#FFF3F7FC" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- 玻璃卡片面：半透明白，透出底层渐变形成层次 -->
@@ -34,8 +36,8 @@
 
     <!-- 顶栏（macOS 工具栏）玻璃色：比内容区更实一点，保证文字可读 -->
     <LinearGradientBrush x:Key="GlassTopBarBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F2FFFFFF" Offset="0"/>
-        <GradientStop Color="#D2EFF6FF" Offset="1"/>
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#FFF4F8FD" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- 玻璃分割线 -->
