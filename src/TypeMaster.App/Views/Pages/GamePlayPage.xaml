@@ -100,13 +100,13 @@
 
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">
                     <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource PrimaryHueMidBrush}"
-                               FontSize="13" VerticalAlignment="Center"/>
-                    <TextBlock Text="   得分 " VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Score}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
-                    <TextBlock Text="   生命 " VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Lives}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
-                    <TextBlock Text="   连击 " VerticalAlignment="Center"/>
-                    <TextBlock x:Name="ComboText" Text="{Binding Combo}" FontWeight="Bold" FontSize="16" VerticalAlignment="Center">
+                               FontSize="15" VerticalAlignment="Center"/>
+                    <TextBlock Text="   得分 " VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock Text="{Binding Score}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
+                    <TextBlock Text="   生命 " VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock Text="{Binding Lives}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
+                    <TextBlock Text="   连击 " VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock x:Name="ComboText" Text="{Binding Combo}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center">
                         <TextBlock.RenderTransform>
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
                         </TextBlock.RenderTransform>
@@ -618,15 +618,16 @@
                                            Source="{Binding Glyph, Converter={StaticResource GlyphToSprite}}"
                                            Width="72" Height="72" HorizontalAlignment="Center"
                                            Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <!-- 单词条：字号 12→15（放大 3px），加粗部分为已输入；
-                                         NoWrap 保证长词横向展开，逐字母变色与击键一一对应 -->
+                                    <!-- 单词条：字号 17（控件默认约 12，累计放大 5px），
+                                         加粗部分为已输入；NoWrap 保证长词横向展开，
+                                         逐字母变色与击键一一对应 -->
                                     <Border CornerRadius="8" Padding="8,4" Margin="0,5,0,0" HorizontalAlignment="Center"
                                             Background="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.AccentBrush}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding MatchedSubstring}" Foreground="White" FontWeight="Bold"
-                                                       FontSize="15" TextWrapping="NoWrap"/>
+                                                       FontSize="17" TextWrapping="NoWrap"/>
                                             <TextBlock Text="{Binding RemainingSubstring}" Foreground="White"
-                                                       FontSize="15" TextWrapping="NoWrap"/>
+                                                       FontSize="17" TextWrapping="NoWrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -702,6 +703,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBox x:Name="InputBox" Grid.Column="0" Margin="0,0,12,0" Padding="10"
+                     FontSize="14"
                      BorderBrush="{Binding AccentBrush}" BorderThickness="2"
                      InputMethod.IsInputMethodEnabled="False"
                      materialDesign:HintAssist.Hint="输入屏幕上单词的首字母锁定目标，继续输入将其消灭"
