@@ -42,10 +42,12 @@ public partial class MainWindow : Window
         ApplyWindowSizing();
 
         // 系统缩放变化（把窗口拖到另一块不同缩放比的显示器、或用户改了系统缩放）时，
-        // 重新计算，保证始终不超出工作区。
-        DpiChanged += (_, _) => ApplyWindowSizing();
+        // 只把当前窗口钳制回工作区，不重套配置尺寸、不重新居中——
+        // 否则用户手动拉大的窗口会在拖拽边缘跨屏（触发 DPI 变化）后
+        // 被悄悄重置回配置大小并居中。
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(new System.Action(EnsureWindowInWorkArea));
 
-        // 显示器拓扑变化（插拔外接显示器）同样要重算：
+        // 显示器拓扑变化（插拔外接显示器）同样只做钳制：
         // 否则窗口可能停留在已经不存在的那块屏幕的坐标上。
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         Closed += (_, _) => Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
@@ -56,7 +58,77 @@ public partial class MainWindow : Window
     /// SystemEvents 在非 UI 线程触发，因此切回 UI 线程再动窗口。
     /// </summary>
     private void OnDisplaySettingsChanged(object? sender, System.EventArgs e)
-        => Dispatcher.BeginInvoke(new System.Action(ApplyWindowSizing));
+        => Dispatcher.BeginInvoke(new System.Action(EnsureWindowInWorkArea));
+
+    /// <summary>
+    /// 仅把「用户当前手动调整过」的窗口钳制回所在显示器的工作区：
+    /// 尺寸超了才收缩、位置越界了才平移，绝不重套配置尺寸、绝不重新居中。
+    ///
+    /// 与 <see cref="ApplyWindowSizing"/> 的分工：后者是启动时的初始布局，
+    /// 会按配置设定尺寸并居中；本方法用于 DPI / 显示器拓扑变化后的修正，
+    /// 保证"永不超出工作区"的同时不打扰用户手动调整的结果。
+    /// </summary>
+    private void EnsureWindowInWorkArea()
+    {
+        try
+        {
+            if (WindowState != WindowState.Normal)
+            {
+                return;
+            }
+
+            Rect workArea = GetCurrentWorkArea();
+            const double margin = 8;
+            double availW = System.Math.Max(320, workArea.Width - margin * 2);
+            double availH = System.Math.Max(240, workArea.Height - margin * 2);
+
+            // 与 ApplyWindowSizing 一致：屏幕过小时临时放宽最小限制
+            bool cramped = availW < MinWidth || availH < MinHeight;
+            if (cramped)
+            {
+                MinWidth = System.Math.Min(MinWidth, availW);
+                MinHeight = System.Math.Min(MinHeight, availH);
+            }
+            else
+            {
+                MinWidth = System.Math.Min(760, availW);
+                MinHeight = System.Math.Min(560, availH);
+            }
+
+            if (Width > availW)
+            {
+                Width = availW;
+            }
+            if (Height > availH)
+            {
+                Height = availH;
+            }
+
+            // 仅在越界时平移回工作区（Left/Top 与工作区同为逻辑单位）
+            double maxLeft = workArea.Right - ActualWidth;
+            double maxTop = workArea.Bottom - ActualHeight;
+            if (Left < workArea.Left)
+            {
+                Left = workArea.Left;
+            }
+            else if (Left > maxLeft)
+            {
+                Left = maxLeft;
+            }
+            if (Top < workArea.Top)
+            {
+                Top = workArea.Top;
+            }
+            else if (Top > maxTop)
+            {
+                Top = maxTop;
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.WriteLine("[MainWindow] 工作区钳制异常：" + ex.Message);
+        }
+    }
 
     #endregion 构造函数
 
@@ -136,12 +208,11 @@ public partial class MainWindow : Window
     #region 尺寸自适应
 
     /// <summary>
-    /// 按用户设置与当前屏幕可用区域，决定窗口的尺寸与位置。
+    /// 按用户设置与当前屏幕可用区域，决定窗口的初始尺寸与位置。
     ///
-    /// 这是本窗口唯一的尺寸决策入口，会在三种时机被调用：
-    ///   · 启动时
-    ///   · 系统 DPI 变化时（拖到另一块不同缩放的屏幕 / 改系统缩放）
-    ///   · 显示器拓扑变化时（插拔外接屏）
+    /// 这是窗口的「初始布局」入口，仅在启动时调用一次；
+    /// 之后的 DPI / 显示器拓扑变化走 <see cref="EnsureWindowInWorkArea"/>，
+    /// 只做钳制修正，避免覆盖用户手动调整的窗口大小与位置。
     ///
     /// 处理要点：
     ///   1) 尊重用户在设置里的窗口尺寸与"自动适配"开关

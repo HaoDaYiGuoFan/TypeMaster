@@ -400,7 +400,7 @@ public partial class GamePlayPage : UserControl
         if (_tickCount % 2 != 0) return;
         foreach (var t in _vm.Targets)
         {
-            double cx = t.X + 65, cy = t.Y + 35; // 目标格子约 130 宽、中心略偏下
+            double cx = t.X + 115, cy = t.Y + 35; // 目标格子约 230 宽、中心略偏下
             if (t.Vx != 0 || t.Vy != 0)
                 AddTrailDot(cx, cy, 7, _vm.AccentBrush, 0.85, 360);
             if (t.IsLocked) // 锁定的目标拖尾更亮更大

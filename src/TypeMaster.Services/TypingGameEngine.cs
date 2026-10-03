@@ -56,8 +56,8 @@ public class TypingGameEngine
     /// 单个游戏目标在界面上的实际高度（像素）。
     ///
     /// 为什么要在这里写死一个常量：目标模板由 GamePlayPage.xaml 的
-    /// ItemsControl.ItemTemplate 定义，内容是「72px 精灵 + 约 37px 单词条」
-    /// 再加少量外边距，合计约 109px。
+    /// ItemsControl.ItemTemplate 定义，内容是「72px 精灵 + 约 39px 单词条」
+    /// 再加少量外边距，合计约 120px。
     /// 引擎在计算"目标该出现在哪个 Y"时必须知道这个高度，否则会把
     /// 单词条算到可视区之外。
     ///
@@ -65,7 +65,18 @@ public class TypingGameEngine
     /// 于是目标底部落在 <c>Height + 39</c>，单词条被 PlayArea 的
     /// ClipToBounds 整条裁掉——表现为"只见虫子、不见单词"。
     /// </summary>
-    private const double TargetVisualHeight = 109;
+    private const double TargetVisualHeight = 120;
+
+    /// <summary>
+    /// 单个游戏目标在界面上的实际宽度（像素）。
+    ///
+    /// 与 GamePlayPage.xaml 目标模板里 Grid 的 Width 保持一致：
+    /// 单词条为容纳最长 18 字母的单词（23 号字）已加宽到 230。
+    /// 引擎按它计算目标 X 的取值范围与"到达/越界"判定，否则
+    /// 右侧生成的目标会带着单词条伸出游戏区右缘，被 PlayArea 的
+    /// ClipToBounds 裁掉——表现为"部分单词被遮挡"。
+    /// </summary>
+    private const double TargetVisualWidth = 230;
 
     /// <summary>目标与游戏区底部之间保留的余量，避免贴边或被圆角切到。</summary>
     private const double TargetBottomMargin = 6;
@@ -207,12 +218,18 @@ public class TypingGameEngine
 
             bool danger = Mode switch
             {
-                GameMode.SpaceWar => t.Y >= Height - 50,
-                GameMode.CatchThief => t.X < -60 || t.X > Width + 60,
-                // 危险判定：目标横向接近青蛙所在的中线。
+                // 落地线：目标【精灵】触及地面即出局（旧值 Height - 50 不含单词条高度，
+                // 最后约 70px 的下落里单词逐渐沉入底边被裁，而玩家还要照着它输入）。
+                // 换算后精灵底部恰好落在 Height - 50 的地面线上，单词条完整可见。
+                GameMode.SpaceWar => t.Y >= Height - TargetVisualHeight - TargetBottomMargin,
+                // 小偷逃逸判定按"整个目标完全离开游戏区"计算（t.X 是目标左缘）
+                GameMode.CatchThief => t.X < -TargetVisualWidth - 20 || t.X > Width + 20,
+                // 危险判定：目标【中心】横向接近青蛙所在的中线。
                 // 青蛙画在游戏区底部中央，目标也从底部中央穿过，
                 // 因此只需横向距离判定即可（纵向已被上面的 Y 计算固定在底部带）。
-                GameMode.FrogBug => Math.Abs(t.X - Width / 2) <= 40,
+                // 注意 t.X 是目标左缘，需先换算到中心（+ TargetVisualWidth / 2），
+                // 否则虫子会明显跑过青蛙才被判"到达"。
+                GameMode.FrogBug => Math.Abs(t.X + TargetVisualWidth / 2 - Width / 2) <= 40,
                 GameMode.WhackMole => t.AgeMs >= t.LifetimeMs,
                 GameMode.BalloonPop => t.Y <= -60,   // 气球飘出顶部
                 _ => false
@@ -369,7 +386,8 @@ public class TypingGameEngine
         switch (Mode)
         {
             case GameMode.SpaceWar:
-                t.X = 40 + _rand.NextDouble() * Math.Max(1, Width - 160);
+                // 左右各留 40 边距，保证整个目标（含 230 宽单词条）完整落在游戏区内
+                t.X = 40 + _rand.NextDouble() * Math.Max(1, Width - TargetVisualWidth - 80);
                 t.Y = -30;
                 t.Vx = 0;
                 t.Vy = _speedPx;
@@ -386,15 +404,20 @@ public class TypingGameEngine
 
             case GameMode.CatchThief:
                 bool left = _rand.Next(2) == 0;
-                t.X = left ? -40 : Width + 40;
-                t.Y = 40 + _rand.NextDouble() * (Height * 0.55);
+                t.X = left ? -TargetVisualWidth + 40 : Width + 40;
+                // 纵向带钳制：矮窗口下不许越过"完整容纳一个目标"的下限，
+                // 否则小偷横向穿场期间单词条一直被下边缘裁掉
+                t.Y = Math.Min(40 + _rand.NextDouble() * (Height * 0.55),
+                               Height - TargetVisualHeight - TargetBottomMargin);
                 t.Vx = (left ? 1 : -1) * _speedPx;
                 t.Vy = 0;
                 break;
 
             case GameMode.FrogBug:
                 bool l2 = _rand.Next(2) == 0;
-                t.X = l2 ? -40 : Width + 40;
+                // 与 CatchThief 一致：从"整个目标完全在屏外"的位置入场，
+                // 两个方向的入场时机才对称
+                t.X = l2 ? -TargetVisualWidth + 40 : Width + 40;
                 // 让【整个目标】完整落在游戏区内：底部对齐到"高度 - 余量"，
                 // 顶部再减去自身高度。这样单词条不会被裁掉。
                 t.Y = Height - TargetVisualHeight - TargetBottomMargin;
@@ -403,16 +426,21 @@ public class TypingGameEngine
                 break;
 
             case GameMode.BalloonPop:
-                t.X = 40 + _rand.NextDouble() * Math.Max(1, Width - 160);
-                t.Y = Height + 30;
+                // 左右各留 40 边距，保证整个目标（含 230 宽单词条）完整落在游戏区内
+                t.X = 40 + _rand.NextDouble() * Math.Max(1, Width - TargetVisualWidth - 80);
+                // 出生即完整可见（底部对齐）：气球自下而上飘，若从屏幕下方整格升起，
+                // 位于目标底部的单词条要等约 150px 才完全进入视野，
+                // 期间单词一直半截被裁而玩家无法输入。入场感由模板的缩放动画补足。
+                t.Y = Height - TargetVisualHeight - TargetBottomMargin;
                 t.Vx = 0;
                 t.Vy = -_speedPx;
                 break;
 
             case GameMode.LifeDeathSpeed:
                 // 竞速模式：单词固定显示在赛道中上方的"当前单词位"，不移动
-                t.X = Width / 2 - 65;
-                t.Y = Height * 0.32;
+                // （t.X 是目标左缘，减去半个占位让单词居中于赛道；矮窗口下同样钳制）
+                t.X = Width / 2 - TargetVisualWidth / 2;
+                t.Y = Math.Min(Height * 0.32, Height - TargetVisualHeight - TargetBottomMargin);
                 t.Vx = 0;
                 t.Vy = 0;
                 break;
@@ -428,8 +456,12 @@ public class TypingGameEngine
         int ci = _rand.Next(cols);
         int ri = _rand.Next(rows);
         double colW = Width / cols;
-        double x = colW * ci + colW / 2 - 60;
-        double y = Height * (0.20 + ri * 0.28);
+        // 目标左缘 = 列中心 - 半个占位，让精灵与单词恰好落在洞口正上方
+        double x = colW * ci + colW / 2 - TargetVisualWidth / 2;
+        // 行位钳制：游戏区偏矮时，按比例算出的行位会让单词条沉到下边缘之外
+        //（表现为地鼠的单词长期半截被裁），此时改为贴着"完整容纳一个目标"的下限
+        double y = Math.Min(Height * (0.20 + ri * 0.28),
+                            Height - TargetVisualHeight - TargetBottomMargin);
         return (x, y);
     }
 

@@ -593,9 +593,9 @@
                     </ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <!-- Grid 由 130 加宽到 160：配合单词条字号放大（12→15px），
-     保证困难档 10~12 字母的长词也能单行完整显示 -->
-<Grid Width="160" UseLayoutRounding="True" SnapsToDevicePixels="True"
+                            <!-- Grid 由 130 经 160、210 加宽到 230：配合单词条字号放大（12→23px），
+     保证困难档最长 18 字母的长词（如 telecommunications）也能单行完整显示 -->
+<Grid Width="230" UseLayoutRounding="True" SnapsToDevicePixels="True"
                                   RenderTransformOrigin="0.5,0.9">
                                 <Grid.RenderTransform>
                                     <TransformGroup>
@@ -618,16 +618,16 @@
                                            Source="{Binding Glyph, Converter={StaticResource GlyphToSprite}}"
                                            Width="72" Height="72" HorizontalAlignment="Center"
                                            Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <!-- 单词条：字号 17（控件默认约 12，累计放大 5px），
+                                    <!-- 单词条：字号 23（控件默认约 12，累计放大 11px），
                                          加粗部分为已输入；NoWrap 保证长词横向展开，
                                          逐字母变色与击键一一对应 -->
                                     <Border CornerRadius="8" Padding="8,4" Margin="0,5,0,0" HorizontalAlignment="Center"
                                             Background="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext.AccentBrush}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding MatchedSubstring}" Foreground="White" FontWeight="Bold"
-                                                       FontSize="17" TextWrapping="NoWrap"/>
+                                                       FontSize="23" TextWrapping="NoWrap"/>
                                             <TextBlock Text="{Binding RemainingSubstring}" Foreground="White"
-                                                       FontSize="17" TextWrapping="NoWrap"/>
+                                                       FontSize="23" TextWrapping="NoWrap"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
