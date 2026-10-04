@@ -34,6 +34,8 @@ public partial class GamePlayPage : UserControl
     private int _tickCount;
     private bool _wasRunning;
     private bool _shakeBusy;
+    /// <summary>本局请求播放的 BGM 曲目，Unloaded 时用于"曲目归属"校验。</summary>
+    private string _bgmTrack = MusicLibrary.Lobby;
 
     private static readonly string[] FxBrushKeys =
         { "PrimaryHueMidBrush", "SecondaryHueMidBrush", "FestiveGreen", "FestiveAmber", "FestiveBlue", "FestiveTeal" };
@@ -55,8 +57,13 @@ public partial class GamePlayPage : UserControl
         Unloaded += (_, _) =>
         {
             _timer.Stop();
-            // 离开对战页时停止 BGM，不在其它页面残留声音
-            _music.Stop();
+            _hook.Stop();
+            // 只停"自己起的曲"：退回游戏厅时，新的大厅页可能已先起播大厅 BGM
+            //（Loaded 与 Unloaded 触发顺序不保证），此时不能误杀大厅曲
+            if (_music.CurrentTrackId == _bgmTrack)
+            {
+                _music.Stop();
+            }
         };
     }
 
@@ -64,8 +71,9 @@ public partial class GamePlayPage : UserControl
     public void Configure(GameMode mode)
     {
         _vm.Initialize(mode);
-        // 每款游戏一首独立 BGM，风格与玩法匹配
-        _music.Play(MusicLibrary.TrackFor(mode));
+        // 每款游戏一首独立 BGM，风格与玩法匹配；记下曲目供 Unloaded 做归属校验
+        _bgmTrack = MusicLibrary.TrackFor(mode);
+        _music.Play(_bgmTrack);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

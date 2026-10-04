@@ -150,6 +150,21 @@ public partial class MainWindow : Window
     /// <summary>关闭窗体。</summary>
     private void CloseWindow(object sender, RoutedEventArgs e) => Close();
 
+    /// <summary>
+    /// 打开新手入门操作指引（可随时重复查看）。
+    /// 与首次启动弹出的引导是同一个窗口，但这里不写"已看过引导"标记——
+    /// 该标记只在首次启动流程（App 启动逻辑）中落盘。
+    /// </summary>
+    public void ShowOnboarding()
+    {
+        var profile = App.ServiceProvider.GetRequiredService<IUserProfile>();
+        var dlg = new OnboardingWindow((DataContext as MainViewModel)?.Nickname ?? profile.Load().Nickname)
+        {
+            Owner = this
+        };
+        dlg.ShowDialog();
+    }
+
     /// <summary>最小化窗体。</summary>
     private void MinimizeWindow(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 

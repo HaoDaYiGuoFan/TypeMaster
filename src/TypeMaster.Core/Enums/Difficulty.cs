@@ -1,7 +1,7 @@
 namespace TypeMaster.Core.Enums;
 
 /// <summary>
-/// 难度等级：入门 / 简单 / 普通 / 困难。
+/// 难度等级：入门 / 简单 / 普通 / 困难 / 地狱。
 ///
 /// <para>
 /// <b>取值约定（重要）</b>：本枚举的整数值会写进数据库（<c>TypingRecord.Difficulty</c>），
@@ -11,6 +11,7 @@ namespace TypeMaster.Core.Enums;
 /// 「入门」是在简单档之下新增的最易档，为不破坏既有成绩记录，
 /// 它被追加为 <c>3</c> 而不是插到 <c>0</c>：
 /// 若设为 0，历史上所有 <c>Difficulty=0</c> 的「简单」成绩都会被读成「入门」。
+/// 「地狱」同理追加为 <c>4</c>，放在困难档之上作为最高档。
 /// </para>
 /// </summary>
 public enum Difficulty
@@ -28,14 +29,20 @@ public enum Difficulty
     /// 入门：比简单更低的一档，面向刚接触键盘的小学生初学者。
     /// 追加为 3 以保证旧成绩语义不变。
     /// </summary>
-    Entry = 3
+    Entry = 3,
+
+    /// <summary>
+    /// 地狱：比困难更高的最高档，面向熟练用户。
+    /// 追加为 4 以保证旧成绩语义不变。
+    /// </summary>
+    Hell = 4
 }
 
 /// <summary>
 /// <see cref="Difficulty"/> 的显示与排序辅助。
 ///
-/// 引入原因：枚举的整数顺序（Easy=0, Normal=1, Hard=2, Entry=3）与
-/// 人类认知的难度顺序（入门 &lt; 简单 &lt; 普通 &lt; 困难）不一致——
+/// 引入原因：枚举的整数顺序（Easy=0, Normal=1, Hard=2, Entry=3, Hell=4）与
+/// 人类认知的难度顺序（入门 &lt; 简单 &lt; 普通 &lt; 困难 &lt; 地狱）不一致——
 /// 这是为了兼容既有存档而做的取舍。所有"按难度排序/取上下档"的逻辑
 /// 都必须走这里，不能直接依赖枚举的整数值排序。
 /// </summary>
@@ -47,7 +54,8 @@ public static class DifficultyOrder
         Difficulty.Entry,
         Difficulty.Easy,
         Difficulty.Normal,
-        Difficulty.Hard
+        Difficulty.Hard,
+        Difficulty.Hell
     };
 
     /// <summary>得到某档在"由易到难"序列中的序号（0 最易）。</summary>
@@ -79,7 +87,7 @@ public static class DifficultyOrder
             return (Difficulty)value;
         }
         // 越界值：负数为最易、过大为最难
-        return value < 0 ? Difficulty.Entry : Difficulty.Hard;
+        return value < 0 ? Difficulty.Entry : Difficulty.Hell;
     }
 
     /// <summary>中文名称。</summary>
@@ -91,6 +99,7 @@ public static class DifficultyOrder
         Difficulty.Easy => "简单",
         Difficulty.Normal => "普通",
         Difficulty.Hard => "困难",
+        Difficulty.Hell => "地狱",
         _ => "未知"
     };
 

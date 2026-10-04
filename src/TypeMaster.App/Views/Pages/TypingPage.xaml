@@ -74,6 +74,9 @@
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Normal}" FontSize="13"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="困难" Tag="{x:Static core:Difficulty.Hard}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hard}" FontSize="13"/>
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="2" Content="地狱" Tag="{x:Static core:Difficulty.Hell}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hell}" FontSize="13"
+                                ToolTip="最高难度：文本最长（950~1100 字符）、达标基准最高，面向熟练用户"/>
 
                         <!-- 难度细分折叠按钮：
                              改前只有一个 28×28 的箭头图标，用户看不出是干什么的。
@@ -85,7 +88,7 @@
                                       Background="Transparent"
                                       BorderBrush="{DynamicResource GlassDividerBrush}"
                                       BorderThickness="1"
-                                      ToolTip="点击展开更细的难度级别（共 13 级）；也可不展开，直接用左边的四个档位按钮">
+                                      ToolTip="点击展开更细的难度级别（共 15 级）；也可不展开，直接用左边的五个档位按钮">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="Bd" CornerRadius="14"
@@ -122,14 +125,14 @@
                         </ToggleButton>
                     </StackPanel>
 
-                    <!-- 难度细分：1~13 级滑动条，与上方四档按钮双向联动（折叠展开） -->
+                    <!-- 难度细分：1~15 级滑动条，与上方五档按钮双向联动（折叠展开） -->
                     <Border Margin="0,8,0,2" Padding="10,8" CornerRadius="10"
                             Background="{DynamicResource GlassSurfaceStrongBrush}"
                             BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1"
                             Visibility="{Binding IsChecked, ElementName=DifficultyExpander, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="难度细分：" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
-                            <Slider x:Name="DifficultySlider" Width="220" Minimum="1" Maximum="13"
+                            <Slider x:Name="DifficultySlider" Width="220" Minimum="1" Maximum="15"
                                     TickFrequency="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
                                     VerticalAlignment="Center" SmallChange="1" LargeChange="1"
                                     Value="{Binding DifficultyLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

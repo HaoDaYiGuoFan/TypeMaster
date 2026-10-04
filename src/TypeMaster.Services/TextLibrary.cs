@@ -415,13 +415,21 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
 
     public static IReadOnlyList<string> GetTexts(PracticeType type, Difficulty difficulty)
     {
+        // 地狱档未单独建池，回退到困难档（内容最难）；
+        // 篇幅差异由 GetTargetLength 的等级长度表体现。
+        var fallback = Difficulty.Hard;
         return type switch
         {
-            PracticeType.Chinese or PracticeType.ChineseWord => ChineseTexts[difficulty],
+            PracticeType.Chinese or PracticeType.ChineseWord => Pool(ChineseTexts, difficulty, fallback),
             PracticeType.SpeedTest => SpeedTexts,
-            _ => EnglishTexts[difficulty]
+            _ => Pool(EnglishTexts, difficulty, fallback)
         };
     }
+
+    /// <summary>取难度题池，缺池时回退到指定档（避免新增档位直接索引抛 KeyNotFoundException）。</summary>
+    private static List<string> Pool(
+        Dictionary<Difficulty, List<string>> pools, Difficulty difficulty, Difficulty fallback)
+        => pools.TryGetValue(difficulty, out var pool) ? pool : pools[fallback];
 
     public static string GetRandomText(PracticeType type, Difficulty difficulty)
     {
@@ -431,10 +439,10 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
         return list[idx];
     }
 
-    #region 难度细分（1~13 级）
+    #region 难度细分（1~15 级）
 
     /// <summary>
-    /// 1~10 级细分难度对应的目标文本长度（字符数），等级越高文本越长。
+    /// 1~15 级细分难度对应的目标文本长度（字符数），等级越高文本越长。
     ///
     /// 历史说明：旧值为 { 40, 70, 110, ... }，等级 1 仅 40 字符 ≈ 一行，
     /// 用户打完第一行就没有后续内容可打（"停在一行不继续"）。
@@ -452,7 +460,9 @@ Despite their fearsome reputation, black holes are not dangerous monsters roamin
         // 普通档（7~10 级）
         280, 320, 360, 450,
         // 困难档（11~13 级）
-        550, 660, 800
+        550, 660, 800,
+        // 地狱档（14~15 级）
+        950, 1100
     };
 
     /// <summary>

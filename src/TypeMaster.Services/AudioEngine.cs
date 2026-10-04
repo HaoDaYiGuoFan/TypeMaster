@@ -109,6 +109,10 @@ internal sealed class AudioEngine : IDisposable
             lock (_gate)
             {
                 _mixer.AddMixerInput(withVolume);
+                // ReadFully=false 的混音器在所有输入被移除后会把输出设备带入
+                // Stopped 态（如音乐 Stop 之后）。重新有输入时必须显式恢复播放，
+                // 否则后续所有声音（音效同理）都永远不会响起。
+                _output?.Play();
             }
             return true;
         }
@@ -156,6 +160,11 @@ internal sealed class AudioEngine : IDisposable
                 var withVolume = new VolumeSampleProvider(Normalize(source)) { Volume = Clamp01(volume) };
                 _musicInput = withVolume;
                 _mixer.AddMixerInput(withVolume);
+                // 关键修复：Stop 之后输出设备可能已因"混音器无输入"自动停止
+                //（ReadFully=false 的 NAudio 行为），重新挂上 BGM 后必须
+                // 显式恢复播放，否则"停了再播"永远无声——这正是
+                // "回首页再进游戏乐园，BGM 消失"的根因。
+                _output?.Play();
                 return true;
             }
             catch

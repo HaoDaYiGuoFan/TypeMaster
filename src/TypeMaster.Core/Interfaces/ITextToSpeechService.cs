@@ -36,6 +36,23 @@ public interface ITextToSpeechService
     /// <returns>真正开始朗读返回 true；被开关关闭、无语音或文本为空返回 false</returns>
     bool Speak(string text, int rateOffset);
 
+    /// <summary>
+    /// 说一句英文鼓励语（如 "Good job" / "Nice"），供打字游戏的正反馈使用。
+    /// 与 <see cref="Speak"/> 的区别：优先挑选系统里的英文语音来念，
+    /// 念完后的下一次中文朗读会自动切回中文语音，互不串音。
+    /// </summary>
+    /// <param name="text">英文鼓励短语</param>
+    /// <returns>真正开始朗读返回 true；被开关关闭、无语音或文本为空返回 false</returns>
+    bool SpeakPraise(string text);
+
+    /// <summary>
+    /// 以指定的相对语速说英文鼓励语。
+    /// </summary>
+    /// <param name="text">英文鼓励短语</param>
+    /// <param name="rateOffset">语速相对偏移，会与设置的语速叠加后收敛到合法区间</param>
+    /// <returns>真正开始朗读返回 true；被开关关闭、无语音或文本为空返回 false</returns>
+    bool SpeakPraise(string text, int rateOffset);
+
     /// <summary>立即停止当前朗读。</summary>
     void Stop();
 }

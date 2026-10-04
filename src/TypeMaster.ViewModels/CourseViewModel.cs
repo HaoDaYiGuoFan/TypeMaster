@@ -298,9 +298,12 @@ public partial class CourseViewModel : ObservableObject
     /// <summary>难度中文名。</summary>
     private static string DifficultyText(Difficulty d) => d switch
     {
+        Difficulty.Entry => "入门",
         Difficulty.Easy => "简单",
         Difficulty.Normal => "普通",
-        _ => "困难"
+        Difficulty.Hard => "困难",
+        Difficulty.Hell => "地狱",
+        _ => d.ToString()
     };
 
     #endregion 文本工具

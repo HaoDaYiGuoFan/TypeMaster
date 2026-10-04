@@ -47,6 +47,9 @@
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Normal}"/>
                         <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="困难" Tag="{x:Static core:Difficulty.Hard}"
                                 Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hard}"/>
+                        <Button Style="{StaticResource DifficultySelectorStyle}" Margin="3" Content="地狱" Tag="{x:Static core:Difficulty.Hell}"
+                                Command="{Binding SelectDifficultyCommand}" CommandParameter="{x:Static core:Difficulty.Hell}"
+                                ToolTip="最高难度：节奏最快、目标最多、生命最少，面向熟练用户"/>
 
                         <!-- 难度细分折叠按钮：
                              原来只有一个 28×28 的箭头，看不出用途。
@@ -56,7 +59,7 @@
                                       Background="Transparent"
                                       BorderBrush="{DynamicResource GlassDividerBrush}"
                                       BorderThickness="1"
-                                      ToolTip="点击展开更细的难度级别（共 13 级）；不展开也能直接用左边的四个档位按钮">
+                                      ToolTip="点击展开更细的难度级别（共 15 级）；不展开也能直接用左边的五个档位按钮">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="Bd" CornerRadius="14"
@@ -111,16 +114,18 @@
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
                         </TextBlock.RenderTransform>
                     </TextBlock>
+                    <TextBlock Text="   剩余 " VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock Text="{Binding TimeLeftText}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- 难度细分：1~13 级滑动条，与四档按钮双向联动（下一局生效，默认折叠） -->
+                <!-- 难度细分：1~15 级滑动条，与五档按钮双向联动（下一局生效，默认折叠） -->
                 <Border Margin="0,10,0,0" Padding="10,8" CornerRadius="10"
                         Background="{DynamicResource GlassSurfaceStrongBrush}"
                         BorderBrush="{DynamicResource GlassDividerBrush}" BorderThickness="1"
                         Visibility="{Binding IsChecked, ElementName=DifficultyExpander, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="难度细分：" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
-                        <Slider Width="220" Minimum="1" Maximum="13" TickFrequency="1" IsSnapToTickEnabled="True"
+                        <Slider Width="220" Minimum="1" Maximum="15" TickFrequency="1" IsSnapToTickEnabled="True"
                                 TickPlacement="BottomRight" VerticalAlignment="Center" SmallChange="1" LargeChange="1"
                                 Value="{Binding DifficultyLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Style="{StaticResource MaterialDesignDiscreteSlider}"/>
@@ -708,7 +713,11 @@
                      InputMethod.IsInputMethodEnabled="False"
                      materialDesign:HintAssist.Hint="输入屏幕上单词的首字母锁定目标，继续输入将其消灭"
                      TextChanged="InputBox_TextChanged" GotFocus="InputBox_GotFocus"/>
-            <uc:VirtualKeyboard x:Name="VkHost" Grid.Column="1"/>
+            <!-- 键盘锁在原始尺寸：宿主在 Auto 列里会拿到"无限宽"的测量约束，
+                 若不设 MaxWidth，VirtualKeyboard 内部的 Viewbox 会一直放大到自己的
+                 上限，把游戏区挤扁（Auto 列不提供真实可用宽度）。
+                 MaxWidth≈键盘自然宽度（约 750），默认 / 最大化 / 任意窗口尺寸下都稳定。 -->
+            <uc:VirtualKeyboard x:Name="VkHost" Grid.Column="1" MaxWidth="760"/>
         </Grid>
 
         <!-- 趣味提示气泡（置顶，不拦截操作） -->

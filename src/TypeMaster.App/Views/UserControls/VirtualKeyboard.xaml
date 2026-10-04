@@ -17,12 +17,15 @@
 
     <!--
         用 Viewbox 包住键盘：屏幕窄或系统缩放较大时（1080p @150%+），
-        键盘整体等比缩小以完整可见；屏幕宽时保持原始大小。
-        StretchDirection=DownOnly 保证只会缩小、不会把键盘放大到失真。
+        键盘整体等比缩小以完整可见；窗口更宽（如最大化 / 全屏）时等比放大，
+        MaxWidth/MaxHeight 把放大上限收敛在约 1.6 倍——既"跟着窗口变大"，
+        又不会在大屏上大到离谱把页面撑出滚动条。
+        （打字练习页给键盘的是横向拉伸列，放大由列宽驱动；
+          游戏对战页的键盘在 Auto 列里没有额外空间，保持原尺寸不受影响。）
     -->
     <Border Background="{DynamicResource MaterialDesignCardBackground}"
             BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="10" Padding="10">
-        <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center">
+        <Viewbox Stretch="Uniform" MaxWidth="1170" MaxHeight="520" HorizontalAlignment="Center">
             <StackPanel x:Name="RowsPanel" Orientation="Vertical"/>
         </Viewbox>
     </Border>

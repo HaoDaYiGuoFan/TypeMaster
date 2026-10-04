@@ -31,9 +31,13 @@ public class DifficultyToTextConverter : IValueConverter
     {
         return value switch
         {
+            // 与 Difficulty 枚举取值一致：0简单 / 1普通 / 2困难 / 3入门 / 4地狱
+            //（入门、地狱是后追加的档，历史数据中不会出现旧值冲突）
             (int)0 => "简单",
             (int)1 => "普通",
             (int)2 => "困难",
+            (int)3 => "入门",
+            (int)4 => "地狱",
             _ => value?.ToString() ?? string.Empty
         };
     }

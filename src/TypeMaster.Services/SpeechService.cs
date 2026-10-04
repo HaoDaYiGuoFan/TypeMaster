@@ -28,6 +28,15 @@ public class SpeechService : ITextToSpeechService, IDisposable
     /// <summary>朗读用的语音对象（延迟创建）。</summary>
     private SpeechSynthesizer? _synth;
 
+    /// <summary>初始化时选定的中文语音名（朗读中文时用它；null 表示未找到中文语音）。</summary>
+    private string? _zhVoiceName;
+
+    /// <summary>英文语音名（延迟探测，供英文鼓励语使用；null 表示未找到）。</summary>
+    private string? _enVoiceName;
+
+    /// <summary>是否已探测过英文语音（失败后不再反复探测）。</summary>
+    private bool _enVoiceProbed;
+
     /// <summary>是否已尝试过初始化（失败后不再反复重试，避免每次都卡顿）。</summary>
     private bool _initAttempted;
 
@@ -97,6 +106,14 @@ public class SpeechService : ITextToSpeechService, IDisposable
                     _synth.Rate = rate;
                 }
 
+                // 若上次说了英文鼓励语把语音切到了英文，这里切回中文，
+                // 保证中文朗读不会突然变成英文口音
+                if (_zhVoiceName is not null
+                    && !string.Equals(_synth.Voice?.Name, _zhVoiceName, StringComparison.Ordinal))
+                {
+                    _synth.SelectVoice(_zhVoiceName);
+                }
+
                 // 打断上一段，保证「点哪个读哪个」，不排队
                 _synth.SpeakAsyncCancelAll();
                 _synth.SpeakAsync(text);
@@ -106,6 +123,64 @@ public class SpeechService : ITextToSpeechService, IDisposable
         catch (Exception ex)
         {
             // 语音设备被占用 / 被策略禁用等：静默降级，不影响界面
+            _initError = "语音播放失败：" + ex.Message;
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public bool SpeakPraise(string text) => SpeakPraise(text, 0);
+
+    /// <inheritdoc />
+    public bool SpeakPraise(string text, int rateOffset)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        // 鼓励语属于"语音"能力，与朗读共用同一个开关
+        if (!AppState.Current.EnableSpeech)
+        {
+            return false;
+        }
+
+        EnsureInitialized();
+        if (_synth is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            lock (_gate)
+            {
+                if (_disposed || _synth is null)
+                {
+                    return false;
+                }
+
+                ProbeEnglishVoice();
+                if (_enVoiceName is not null
+                    && !string.Equals(_synth.Voice?.Name, _enVoiceName, StringComparison.Ordinal))
+                {
+                    _synth.SelectVoice(_enVoiceName);
+                }
+                // 没有英文语音时保持当前语音（中文语音读英文单词通常也可辨认）
+
+                int rate = Math.Clamp(AppState.Current.SpeechRate + rateOffset, -5, 5);
+                if (_synth.Rate != rate)
+                {
+                    _synth.Rate = rate;
+                }
+
+                _synth.SpeakAsyncCancelAll();
+                _synth.SpeakAsync(text);
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
             _initError = "语音播放失败：" + ex.Message;
             return false;
         }
@@ -165,6 +240,7 @@ public class SpeechService : ITextToSpeechService, IDisposable
                 if (zh is not null)
                 {
                     synth.SelectVoice(zh.Name);
+                    _zhVoiceName = zh.Name;
                 }
                 else
                 {
@@ -178,6 +254,34 @@ public class SpeechService : ITextToSpeechService, IDisposable
                 _initError = "语音功能不可用：" + ex.Message;
                 _synth = null;
             }
+        }
+    }
+
+    /// <summary>
+    /// 延迟探测英文语音（供英文鼓励语使用）：优先 en-US，其次任意 en 开头；
+    /// 只探测一次，找不到就记住结果不再重试。
+    /// </summary>
+    private void ProbeEnglishVoice()
+    {
+        if (_enVoiceProbed || _synth is null)
+        {
+            return;
+        }
+        _enVoiceProbed = true;
+
+        try
+        {
+            var voices = _synth.GetInstalledVoices()
+                .Where(v => v.Enabled)
+                .Select(v => v.VoiceInfo)
+                .ToList();
+            var en = voices.FirstOrDefault(i => i.Culture.Name.Equals("en-US", StringComparison.OrdinalIgnoreCase))
+                     ?? voices.FirstOrDefault(i => i.Culture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase));
+            _enVoiceName = en?.Name;
+        }
+        catch
+        {
+            _enVoiceName = null;
         }
     }
 

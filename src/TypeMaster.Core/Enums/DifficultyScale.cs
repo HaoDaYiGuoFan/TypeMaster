@@ -1,16 +1,16 @@
 namespace TypeMaster.Core.Enums;
 
 /// <summary>
-/// 难度细分等级：在 <see cref="Difficulty"/>（入门 / 简单 / 普通 / 困难）四档之上再细分为 13 级。
-/// 1 级最易、13 级最难；四档仍作为题库索引与历史成绩存档的维度，
+/// 难度细分等级：在 <see cref="Difficulty"/>（入门 / 简单 / 普通 / 困难 / 地狱）五档之上再细分为 15 级。
+/// 1 级最易、15 级最难；五档仍作为题库索引与历史成绩存档的维度，
 /// 细分等级只影响练习文本长度、游戏刷怪节奏等"手感"参数，不改动数据库结构。
 ///
 /// <para>
 /// <b>等级区间划分</b>（由易到难）：
-/// 入门 [1, 3]、简单 [4, 6]、普通 [7, 10]、困难 [11, 13]。
+/// 入门 [1, 3]、简单 [4, 6]、普通 [7, 10]、困难 [11, 13]、地狱 [14, 15]。
 /// </para>
 /// <para>
-/// <b>为什么四档不从 1 级开始均匀分</b>：难度不是线性的——
+/// <b>为什么档位不从 1 级开始均匀分</b>：难度不是线性的——
 /// 初学者从"认识键盘"到"能连续打"跨越大，需要更细的台阶；
 /// 而中高档之间差异主要体现在速度与准确率上，台阶可以更大。
 /// 因此入门档给了独立的 1~3 级（其中 1 级比原来的最低级还容易）。
@@ -24,7 +24,7 @@ public static class DifficultyScale
     public const int Min = 1;
 
     /// <summary>最大细分等级（最难）。</summary>
-    public const int Max = 13;
+    public const int Max = 15;
 
     /// <summary>入门档的等级区间 [1, 3]。</summary>
     private const int EntryMax = 3;
@@ -34,6 +34,9 @@ public static class DifficultyScale
 
     /// <summary>普通档的等级区间 [7, 10]。</summary>
     private const int NormalMax = 10;
+
+    /// <summary>困难档的等级区间 [11, 13]。</summary>
+    private const int HardMax = 13;
 
     #endregion 常量
 
@@ -58,7 +61,7 @@ public static class DifficultyScale
     }
 
     /// <summary>
-    /// 细分等级 → 难度档：1~3 入门，4~6 简单，7~10 普通，11~13 困难。
+    /// 细分等级 → 难度档：1~3 入门，4~6 简单，7~10 普通，11~13 困难，14~15 地狱。
     /// </summary>
     /// <param name="level">细分等级（会自动收敛到合法区间）</param>
     /// <returns>对应的难度档</returns>
@@ -77,7 +80,11 @@ public static class DifficultyScale
         {
             return Difficulty.Normal;
         }
-        return Difficulty.Hard;
+        if (lv <= HardMax)
+        {
+            return Difficulty.Hard;
+        }
+        return Difficulty.Hell;
     }
 
     /// <summary>
@@ -92,6 +99,7 @@ public static class DifficultyScale
         Difficulty.Easy => 5,       // [4,6] 的中位
         Difficulty.Normal => 8,     // [7,10] 的中位偏易
         Difficulty.Hard => 12,      // [11,13] 的中位
+        Difficulty.Hell => 14,      // [14,15] 的低位——刚进地狱档先从 14 级起步
         _ => Min
     };
 
@@ -103,7 +111,8 @@ public static class DifficultyScale
         Difficulty.Entry => (Min, EntryMax),
         Difficulty.Easy => (EntryMax + 1, EasyMax),
         Difficulty.Normal => (EasyMax + 1, NormalMax),
-        Difficulty.Hard => (NormalMax + 1, Max),
+        Difficulty.Hard => (NormalMax + 1, HardMax),
+        Difficulty.Hell => (HardMax + 1, Max),
         _ => (Min, Max)
     };
 
@@ -151,7 +160,9 @@ public static class DifficultyScale
         10 => "10 级 · 熟练",
         11 => "11 级 · 困难",
         12 => "12 级 · 挑战",
-        _ => "13 级 · 极限"
+        13 => "13 级 · 极限",
+        14 => "14 级 · 地狱",
+        _ => "15 级 · 炼狱"
     };
 
     /// <summary>

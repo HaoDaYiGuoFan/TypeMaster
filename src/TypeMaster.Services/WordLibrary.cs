@@ -238,6 +238,16 @@ public static class WordLibrary
 
     #endregion 中文句子
 
+    // 地狱档直接复用困难档的题池（内容已是各表中最难），
+    // "地狱感"由更长的篇幅（见 GetWordCount / GetSentenceCount）与更快的游戏节奏体现。
+    static WordLibrary()
+    {
+        EnglishWords[Difficulty.Hell] = EnglishWords[Difficulty.Hard];
+        ChineseWords[Difficulty.Hell] = ChineseWords[Difficulty.Hard];
+        EnglishSentences[Difficulty.Hell] = EnglishSentences[Difficulty.Hard];
+        ChineseSentences[Difficulty.Hell] = ChineseSentences[Difficulty.Hard];
+    }
+
     #region 公开接口
 
     /// <summary>
@@ -329,7 +339,10 @@ public static class WordLibrary
         // 困难档（11~13 级）
         11 => 36,
         12 => 40,
-        _ => 44
+        13 => 44,
+        // 地狱档（14~15 级）
+        14 => 48,
+        _ => 52
     };
 
     /// <summary>
@@ -349,7 +362,9 @@ public static class WordLibrary
         10 => 8,
         11 => 9,
         12 => 10,
-        _ => 11
+        13 => 11,
+        14 => 12,
+        _ => 13
     };
 
     /// <summary>从池中不放回地随机抽取 count 个（count 超过池容量时取全池）。</summary>

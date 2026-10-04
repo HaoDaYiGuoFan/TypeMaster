@@ -400,15 +400,17 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
                                     <TextBlock Text="左手小指→无名指→中指→食指" FontSize="11.5" VerticalAlignment="Center" Margin="0,0,10,0"
                                                Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="A"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="S"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="D"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="F"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}" Background="{DynamicResource PrimaryHueMidBrush}"><TextBlock Text="空格" Foreground="White"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="J"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="K"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="L"/></Border>
-                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text=";"/></Border>
+                                    <!-- 键帽字母居中：TextBlock 必须显式双向居中，
+                                         否则 WPF 默认把文本画在可用区左上角 -->
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="A" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="S" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="D" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="F" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}" Background="{DynamicResource PrimaryHueMidBrush}"><TextBlock Text="空格" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="J" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="K" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text="L" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                    <Border Style="{StaticResource FingerKeyStyle}"><TextBlock Text=";" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                                     <TextBlock Text="←右手食指→中指→无名指→小指" FontSize="11.5" VerticalAlignment="Center" Margin="10,0,0,0"
                                                Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
                                 </StackPanel>

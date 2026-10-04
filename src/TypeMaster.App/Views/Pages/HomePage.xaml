@@ -152,7 +152,7 @@
                         <TextBlock Text="打字练习" FontSize="17" FontWeight="Bold"
                                    HorizontalAlignment="Center" Margin="0,12,0,4"
                                    Foreground="{DynamicResource GlassTextBrush}"/>
-                        <TextBlock Text="英文 / 中文 / 限时测速 / 五笔字根，13 级难度细分（含入门档，适合小学生），实时统计正确率与速度"
+                        <TextBlock Text="英文 / 中文 / 限时测速 / 五笔字根，15 级难度细分（入门到地狱五档，适合小学生到熟练用户），实时统计正确率与速度"
                                    FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource GlassTextSecondaryBrush}"
                                    HorizontalAlignment="Center" TextAlignment="Center"/>
@@ -311,6 +311,14 @@
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CogOutline" Width="16" Height="16" Foreground="#7B1FA2"/>
                                 <TextBlock Text="系统设置" Margin="4,0,0,0" Foreground="#7B1FA2"/>
+                            </StackPanel>
+                        </Button>
+                        <!-- 新手入门操作指引：随时可重新打开首次启动时的引导窗口 -->
+                        <Button Style="{StaticResource QuickNavButton}" Click="ShowGuide"
+                                ToolTip="打开新手入门操作指引，快速了解打字练习、游戏乐园与各项功能">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="#C62828"/>
+                                <TextBlock Text="新手指引" Margin="4,0,0,0" Foreground="#C62828"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>

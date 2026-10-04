@@ -614,7 +614,10 @@ public static class WubiLibrary
             10 => 34,
             11 => 38,
             12 => 42,
-            _ => 46
+            13 => 46,
+            // 地狱档（14~15 级）
+            14 => 52,
+            _ => 58
         };
 
         var keys = CharCodes.Keys.ToList();

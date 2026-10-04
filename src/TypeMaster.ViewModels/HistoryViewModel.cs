@@ -648,9 +648,13 @@ public partial class HistoryViewModel : ObservableObject
     /// <summary>难度中文名。</summary>
     public static string DifficultyText(int difficulty) => difficulty switch
     {
+        // 与 Difficulty 枚举取值一致：0简单 / 1普通 / 2困难 / 3入门 / 4地狱
         0 => "简单",
         1 => "普通",
-        _ => "困难"
+        2 => "困难",
+        3 => "入门",
+        4 => "地狱",
+        _ => difficulty.ToString()
     };
 
     #endregion 文本工具

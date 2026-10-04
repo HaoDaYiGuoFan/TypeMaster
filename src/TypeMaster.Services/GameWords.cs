@@ -504,6 +504,8 @@ public static class GameWords
             TypeMaster.Core.Enums.Difficulty.Easy => EasyWords,
             TypeMaster.Core.Enums.Difficulty.Normal => NormalWords,
             TypeMaster.Core.Enums.Difficulty.Hard => HardWords,
+            // 地狱档复用困难档长词表（9+ 字母）；地狱感来自更快的节奏，词表已是最难
+            TypeMaster.Core.Enums.Difficulty.Hell => HardWords,
             // 兜底不再落到最难的一档，避免将来新增档位时又是长词
             _ => EasyWords
         };

@@ -22,6 +22,9 @@ public class GameOverEventArgs : EventArgs
 {
     public int Score { get; init; }
     public int MaxCombo { get; init; }
+
+    /// <summary>是否因本局时间耗尽而结束（否则是生命耗尽 / 竞速分出胜负）。</summary>
+    public bool TimedOut { get; init; }
 }
 
 /// <summary>完整输入一个单词时的事件参数（携带位置，供界面播放爆裂特效）</summary>
@@ -49,8 +52,18 @@ public class TypingGameEngine
     private int _maxCombo;
     private int _level = DifficultyScale.Min;
 
-    /// <summary>生死时速：每完整消灭一个单词，玩家选手前进的距离（像素）。</summary>
-    private const double PlayerAdvancePx = 55;
+    /// <summary>
+    /// 生死时速：玩家每完整消灭一个单词前进的距离（像素），由 <see cref="ComputeRaceMetrics"/> 按赛道宽度折算。
+    ///
+    /// 历史缺陷：曾是固定 55px——赛道宽度用的是游戏区实际像素宽，
+    /// 窗口一宽（最大化 / 大屏）玩家要打的单词数就线性变多，而电脑选手
+    /// 速度不变、照样几十秒跑完，结果"打得很好仍然惜败"，一局还突然结束。
+    /// 现改为按"固定单词数到终点"折算步长，与窗口宽度彻底解耦。
+    /// </summary>
+    private double _playerAdvancePx;
+
+    /// <summary>生死时速：电脑选手每秒前进距离，由 <see cref="ComputeRaceMetrics"/> 按难度时限折算。</summary>
+    private double _rivalSpeedPx;
 
     /// <summary>
     /// 单个游戏目标在界面上的实际高度（像素）。
@@ -97,7 +110,24 @@ public class TypingGameEngine
     public int Level => _level;
 
     /// <summary>游戏区域尺寸（由页面在 Loaded / SizeChanged 时设置）</summary>
-    public double Width { get; set; } = 800;
+    private double _width = 800;
+
+    /// <summary>游戏区域宽度（由页面在 Loaded / SizeChanged 时设置）。</summary>
+    public double Width
+    {
+        get => _width;
+        set
+        {
+            _width = value;
+            // 竞速进行中窗口宽度变化：按新赛道宽度重算步长与电脑速度，
+            // 保持"玩家单词数到终点 / 电脑用时"两个约定不随窗口尺寸漂移
+            if (IsRunning && Mode == GameMode.LifeDeathSpeed)
+            {
+                ComputeRaceMetrics();
+            }
+        }
+    }
+
     public double Height { get; set; } = 500;
 
     public int Score { get; private set; }
@@ -105,6 +135,12 @@ public class TypingGameEngine
     public int Combo { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsGameOver { get; private set; }
+
+    /// <summary>
+    /// 本局剩余时间（秒）。一局共有三种结束方式：生命耗尽、竞速分出胜负、时间耗尽——
+    /// 时间上限保证"高手不死也能打完一局"，一局时长可控（用户反馈此前一局太长）。
+    /// </summary>
+    public double TimeLeftSeconds { get; private set; }
 
     /// <summary>生死时速：玩家选手的横向位置（像素），供界面渲染赛道位置。</summary>
     public double PlayerX { get; private set; }
@@ -176,10 +212,65 @@ public class TypingGameEngine
         RivalX = 20;
         PlayerWon = false;
         IsGameOver = false;
+        TimeLeftSeconds = RoundSeconds;
+        // 竞速模式的步长 / 电脑速度依赖赛道宽度，开局时折算一次
+        if (Mode == GameMode.LifeDeathSpeed)
+        {
+            ComputeRaceMetrics();
+        }
         IsRunning = true;
     }
 
     public void Stop() => IsRunning = false;
+
+    /// <summary>
+    /// 折算生死时速的竞速参数：玩家完整打满 <see cref="RaceWordsToFinish"/> 个单词到终点，
+    /// 电脑选手用 <see cref="RaceRivalSeconds"/> 秒跑完全程。
+    /// 两个量都按"赛道实际宽度"折算成像素，窗口再宽，需要打的单词数也不变。
+    /// </summary>
+    private void ComputeRaceMetrics()
+    {
+        double distance = Math.Max(200, Width - 60);
+        _playerAdvancePx = distance / RaceWordsToFinish;
+        _rivalSpeedPx = distance / RaceRivalSeconds;
+    }
+
+    /// <summary>生死时速：玩家到终点需要完整输入的单词数（按难度递增，与窗口宽度无关）。</summary>
+    private int RaceWordsToFinish => Difficulty switch
+    {
+        // 入门档：12 个短词，允许平均每个词 5 秒（60 秒时限内电脑才跑完），刚学的孩子努力一下能赢
+        Difficulty.Entry => 12,
+        Difficulty.Easy => 15,
+        Difficulty.Normal => 18,
+        Difficulty.Hard => 20,
+        _ => 24
+    };
+
+    /// <summary>生死时速：电脑选手跑完全程的秒数（玩家节奏慢于它即落败），随难度收紧。</summary>
+    private double RaceRivalSeconds => Difficulty switch
+    {
+        Difficulty.Entry => 60,
+        Difficulty.Easy => 55,
+        Difficulty.Normal => 50,
+        Difficulty.Hard => 45,
+        _ => 40
+    };
+
+    /// <summary>
+    /// 本局时限（秒）：入门 120 / 简单 105 / 普通 90 / 困难 80 / 地狱 70。
+    ///
+    /// 为什么随难度递减：低龄玩家打得慢，给足时间才能攒到分数、玩得尽兴；
+    /// 高档位玩家手速快，更短的一局反而更紧凑刺激。竞速模式由终点线
+    /// 自然收尾（电脑选手最快二十来秒即到），时限只作兜底。
+    /// </summary>
+    private int RoundSeconds => Difficulty switch
+    {
+        Difficulty.Entry => 120,
+        Difficulty.Easy => 105,
+        Difficulty.Normal => 90,
+        Difficulty.Hard => 80,
+        _ => 70
+    };
 
     /// <summary>每帧推进：dtSeconds 为距上一帧的秒数</summary>
     public void Tick(double dtSeconds)
@@ -187,12 +278,21 @@ public class TypingGameEngine
         if (!IsRunning) return;
         double dms = dtSeconds * 1000;
 
+        // 本局倒计时：时间耗尽同样结束一局
+        TimeLeftSeconds -= dtSeconds;
+        if (TimeLeftSeconds <= 0)
+        {
+            TimeLeftSeconds = 0;
+            EndGame(timedOut: true);
+            return;
+        }
+
         // 生死时速：电脑选手按本局速度匀速前进，玩家每消灭一个单词前进一格
         #region 生死时速：选手推进与胜负判定
 
         if (Mode == GameMode.LifeDeathSpeed)
         {
-            RivalX += _speedPx * dtSeconds;
+            RivalX += _rivalSpeedPx * dtSeconds;
             double finish = Width - 40;
             if (RivalX >= finish)
             {
@@ -288,7 +388,7 @@ public class TypingGameEngine
                 // 生死时速：每完整输入一个单词，玩家选手向终点推进一格
                 if (Mode == GameMode.LifeDeathSpeed)
                 {
-                    PlayerX += PlayerAdvancePx;
+                    PlayerX += _playerAdvancePx;
                 }
 
                 _locked.IsLocked = false;
@@ -342,28 +442,36 @@ public class TypingGameEngine
             (GameMode.SpaceWar, Difficulty.Easy) => (8, 4200, 2, 15, 0),
             (GameMode.SpaceWar, Difficulty.Normal) => (7, 3400, 3, 23, 0),
             (GameMode.SpaceWar, Difficulty.Hard) => (6, 2700, 4, 33, 0),
+            (GameMode.SpaceWar, Difficulty.Hell) => (5, 2200, 5, 42, 0),
 
             (GameMode.WhackMole, Difficulty.Easy) => (8, 3000, 2, 0, 5200),
             (GameMode.WhackMole, Difficulty.Normal) => (7, 2400, 3, 0, 4400),
             (GameMode.WhackMole, Difficulty.Hard) => (6, 1900, 4, 0, 3600),
+            (GameMode.WhackMole, Difficulty.Hell) => (5, 1500, 5, 0, 2800),
 
             (GameMode.CatchThief, Difficulty.Easy) => (8, 4600, 1, 26, 0),
             (GameMode.CatchThief, Difficulty.Normal) => (7, 3700, 2, 40, 0),
             (GameMode.CatchThief, Difficulty.Hard) => (6, 2900, 3, 56, 0),
+            (GameMode.CatchThief, Difficulty.Hell) => (5, 2400, 4, 70, 0),
 
             (GameMode.FrogBug, Difficulty.Easy) => (8, 4000, 1, 14, 0),
             (GameMode.FrogBug, Difficulty.Normal) => (7, 3200, 2, 21, 0),
             (GameMode.FrogBug, Difficulty.Hard) => (6, 2500, 3, 31, 0),
+            (GameMode.FrogBug, Difficulty.Hell) => (5, 2000, 4, 40, 0),
 
             // 打气球：气球从底部升起，速度 / 数量随难度递增
             (GameMode.BalloonPop, Difficulty.Easy) => (8, 4200, 2, 18, 0),
             (GameMode.BalloonPop, Difficulty.Normal) => (7, 3400, 3, 26, 0),
             (GameMode.BalloonPop, Difficulty.Hard) => (6, 2700, 4, 36, 0),
+            (GameMode.BalloonPop, Difficulty.Hell) => (5, 2200, 5, 46, 0),
 
-            // 生死时速：speed 为电脑选手前进速度；刷怪间隔即"下一个单词"出现节奏
+            // 生死时速：speed 字段已不再直接使用——电脑选手速度改由
+            // ComputeRaceMetrics 按"跑完全程的秒数"折算（与赛道宽度解耦）；
+            // spawn 保留为下一个单词的出现节奏
             (GameMode.LifeDeathSpeed, Difficulty.Easy) => (3, 700, 1, 52, 0),
             (GameMode.LifeDeathSpeed, Difficulty.Normal) => (3, 550, 1, 78, 0),
             (GameMode.LifeDeathSpeed, Difficulty.Hard) => (3, 420, 1, 112, 0),
+            (GameMode.LifeDeathSpeed, Difficulty.Hell) => (3, 350, 1, 140, 0),
 
             _ => (8, 4000, 2, 22, 0),
         };
@@ -491,7 +599,7 @@ public class TypingGameEngine
         // 普通档（7~10 级）
         7 or 8 => 8,
         9 or 10 => 10,
-        // 困难档（11~13 级）：不再限制
+        // 困难档（11~13 级）与地狱档（14~15 级）：不再限制
         _ => int.MaxValue
     };
 
@@ -540,10 +648,10 @@ public class TypingGameEngine
         if (Lives <= 0) EndGame();
     }
 
-    private void EndGame()
+    private void EndGame(bool timedOut = false)
     {
         IsRunning = false;
         IsGameOver = true;
-        GameOver?.Invoke(this, new GameOverEventArgs { Score = Score, MaxCombo = _maxCombo });
+        GameOver?.Invoke(this, new GameOverEventArgs { Score = Score, MaxCombo = _maxCombo, TimedOut = timedOut });
     }
 }

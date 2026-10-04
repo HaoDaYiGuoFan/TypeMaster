@@ -16,6 +16,7 @@ public partial class GameViewModel : ObservableObject
 {
     private readonly TypingGameEngine _engine;
     private readonly ISoundService _sound;
+    private readonly ITextToSpeechService _speech;
     private readonly INavigationService _nav;
     private readonly FunTipService _fun;
 
@@ -23,6 +24,17 @@ public partial class GameViewModel : ObservableObject
 
     private int _lastMilestone;
     private DateTime _lastErrorTip = DateTime.MinValue;
+    private DateTime _lastPraise = DateTime.MinValue;
+    private int _praiseIndex;
+
+    /// <summary>
+    /// 打对单词时轮换播报的英文鼓励语。
+    ///
+    /// 为什么不每次都播同一条：孩子对固定表扬很快麻木，轮换能持续给新鲜感；
+    /// 为什么不播中文：英文短词更短促，不打断打字节奏，也更像游戏里的配音。
+    /// </summary>
+    private static readonly string[] PraiseWords =
+        { "Good", "Nice", "Great", "Cool", "Awesome", "Well done", "Perfect", "Excellent", "Amazing", "You did it" };
 
     #endregion 局部变量属性
 
@@ -39,6 +51,10 @@ public partial class GameViewModel : ObservableObject
     [ObservableProperty] private bool _isRunning;
     [ObservableProperty] private bool _isGameOver;
     [ObservableProperty] private string _statusMessage = "按“开始游戏”进入战斗";
+
+    /// <summary>本局剩余时间的展示文本，整秒变化时才刷新（避免每帧 40 次重绘）。</summary>
+    [ObservableProperty] private string _timeLeftText = "--";
+
     [ObservableProperty] private Difficulty _selectedDifficulty = Difficulty.Normal;
 
     /// <summary>难度细分等级（1~10），与三档难度按钮双向联动。</summary>
@@ -70,10 +86,11 @@ public partial class GameViewModel : ObservableObject
 
     #region 构造函数
 
-    public GameViewModel(TypingGameEngine engine, ISoundService sound, INavigationService nav, FunTipService fun)
+    public GameViewModel(TypingGameEngine engine, ISoundService sound, ITextToSpeechService speech, INavigationService nav, FunTipService fun)
     {
         _engine = engine;
         _sound = sound;
+        _speech = speech;
         _nav = nav;
         _fun = fun;
 
@@ -82,12 +99,16 @@ public partial class GameViewModel : ObservableObject
             IsGameOver = true;
             IsRunning = false;
             if (AppState.Current.EnableSound) _sound.PlayGameOver();
-            // 生死时速：按胜负给出不同的结算文案，其余模式维持原有文案
+            // 结算文案：超时到点 / 生命耗尽 / 竞速胜负 三种收尾各有措辞
             if (Mode == GameMode.LifeDeathSpeed)
             {
                 StatusMessage = _engine.PlayerWon
                     ? $"你赢啦！率先冲过终点，本局得分 {e.Score}，最高连击 {e.MaxCombo}"
                     : $"惜败！电脑选手先到了终点，本局得分 {e.Score}，最高连击 {e.MaxCombo}";
+            }
+            else if (e.TimedOut)
+            {
+                StatusMessage = $"时间到！本局得分 {e.Score}，最高连击 {e.MaxCombo}";
             }
             else
             {
@@ -124,6 +145,7 @@ public partial class GameViewModel : ObservableObject
                         break;
                 }
             }
+            PlayPraise();
             _fun.ShowWordCompleted();
             RaiseEffect(GameEffectKind.WordBurst, e.X, e.Y, e.Gained);
             if (e.Combo > 0 && e.Combo % 5 == 0 && e.Combo != _lastMilestone)
@@ -161,6 +183,28 @@ public partial class GameViewModel : ObservableObject
 
     private void RaiseEffect(GameEffectKind kind, double x = 0, double y = 0, int value = 0)
         => EffectRequested?.Invoke(this, new GameEffectEventArgs { Kind = kind, X = x, Y = y, Value = value });
+
+    /// <summary>
+    /// 打对单词后说一句英文鼓励语（Good / Nice / Great…轮换）。
+    ///
+    /// 节流：至少间隔 2 秒才播——地狱档后期单词很短，高频连打时
+    /// 句句都播会互相打断（TTS 是"取消上一段再说"），听起来像结巴。
+    /// 语音开关（设置里的"语音朗读"）关闭时不出声。
+    /// </summary>
+    private void PlayPraise()
+    {
+        if (!AppState.Current.EnableSpeech)
+        {
+            return;
+        }
+        if ((DateTime.Now - _lastPraise).TotalSeconds < 2)
+        {
+            return;
+        }
+        _lastPraise = DateTime.Now;
+        _praiseIndex = (_praiseIndex + 1) % PraiseWords.Length;
+        _speech.SpeakPraise(PraiseWords[_praiseIndex]);
+    }
 
     #endregion 特效
 
@@ -224,6 +268,18 @@ public partial class GameViewModel : ObservableObject
         if (!_engine.IsRunning) return;
         _engine.Tick(dtSeconds);
         SyncView();
+        RefreshTimeLeft();
+    }
+
+    /// <summary>同步剩余时间文本：只在整数秒变化时更新绑定，减少无谓的界面刷新。</summary>
+    private void RefreshTimeLeft()
+    {
+        int seconds = (int)Math.Ceiling(_engine.TimeLeftSeconds);
+        string text = $"{seconds} 秒";
+        if (TimeLeftText != text)
+        {
+            TimeLeftText = text;
+        }
     }
 
     public void Feed(char c)
@@ -245,6 +301,7 @@ public partial class GameViewModel : ObservableObject
         _lastMilestone = 0;
         _lastErrorTip = DateTime.MinValue;
         SyncView();
+        RefreshTimeLeft();
         StatusMessage = "开始！输入屏幕上单词的首字母锁定目标，继续输入将其消灭";
         if (AppState.Current.EnableSound) _sound.PlayStart();
         _fun.ShowStart();

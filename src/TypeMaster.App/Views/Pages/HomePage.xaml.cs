@@ -49,4 +49,13 @@ public partial class HomePage
         if (DataContext is ViewModels.MainViewModel vm)
             vm.GoSettingsCommand.Execute(null);
     }
+
+    /// <summary>打开新手入门操作指引（可随时重复查看，不影响"首次启动已看过"标记）。</summary>
+    private void ShowGuide(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is Views.Windows.MainWindow main)
+        {
+            main.ShowOnboarding();
+        }
+    }
 }
