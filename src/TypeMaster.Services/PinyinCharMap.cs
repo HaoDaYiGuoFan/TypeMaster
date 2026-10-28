@@ -1107,6 +1107,51 @@ public static class PinyinCharMap
     /// <summary>表内字数。</summary>
     public static int Count => PinyinMap.Count;
 
+    /// <summary>
+    /// 把一个带声调的拼音音节拆成「声母 + 韵母」两段，供界面双色标注。
+    ///
+    /// 拆分规则（与小学拼音教学一致）：
+    ///   · 双字母声母优先：zh / ch / sh
+    ///   · 单字母声母：b p m f d t n l g k h j q x r z c s y w
+    ///     （y / w 在教学中作为零声母音节的引导字母，按声母着色更直观）
+    ///   · 其余为零声母：整段算韵母（如 a / ai / er / ang）
+    /// 声调符号只出现在韵母的元音上，不影响声母识别。
+    /// </summary>
+    /// <param name="pinyin">带声调的音节（如 lěi / zhuāng / àn）</param>
+    /// <returns>(声母, 韵母)；两者拼接恒等于输入</returns>
+    public static (string Initial, string Final) SplitSyllable(string pinyin)
+    {
+        if (string.IsNullOrEmpty(pinyin))
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        if (pinyin.Length >= 2)
+        {
+            string two = pinyin[..2].ToLowerInvariant();
+            if (two is "zh" or "ch" or "sh")
+            {
+                return (pinyin[..2], pinyin[2..]);
+            }
+        }
+
+        char c0 = char.ToLowerInvariant(pinyin[0]);
+        if (InitialLetters.Contains(c0))
+        {
+            if (pinyin.Length == 1)
+            {
+                // 单字母不成音节：整体当韵母处理，避免出现空的韵母段
+                return (string.Empty, pinyin);
+            }
+            return (pinyin[..1], pinyin[1..]);
+        }
+
+        return (string.Empty, pinyin);
+    }
+
+    /// <summary>声母字母表（含 y / w 引导字母）。</summary>
+    private const string InitialLetters = "bpmfdtnlgkhjqxrzcsyw";
+
     #endregion 查询
 
     #region 私有工具

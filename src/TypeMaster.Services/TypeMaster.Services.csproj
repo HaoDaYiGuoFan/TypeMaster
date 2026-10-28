@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- 目标框架必须带 -windows：本项目音频/语音依赖 Windows 专有 API
          （NAudio 的 WaveOut 输出设备、SAPI 语音合成），在纯 net8.0 下不可见。 -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>TypeMaster.Services</RootNamespace>

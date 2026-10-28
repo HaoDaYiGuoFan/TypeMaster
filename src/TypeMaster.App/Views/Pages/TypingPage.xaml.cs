@@ -48,8 +48,11 @@ public partial class TypingPage : UserControl
     /// <summary>拼音行的字体（Segoe UI 对声调字母 ā ǎ ǖ 的覆盖最完整）。</summary>
     private static readonly FontFamily PinyinFont = new("Segoe UI");
 
-    /// <summary>一个拼音格：容器 + 拼音行 + 汉字行。</summary>
-    private sealed record RubyCell(InlineUIContainer Container, TextBlock Pinyin, TextBlock Char);
+    /// <summary>韵母的着色（与声母的橙色区分，让音节结构一眼可见）。</summary>
+    private static readonly SolidColorBrush FinalBrush = new(Color.FromRgb(0x1E, 0x88, 0xE5));
+
+    /// <summary>一个拼音格：容器 + 声母 Run + 韵母 Run + 汉字行。</summary>
+    private sealed record RubyCell(InlineUIContainer Container, Run PinyinInitial, Run PinyinFinal, TextBlock Char);
 
     public TypingPage()
     {
@@ -348,15 +351,25 @@ public partial class TypingPage : UserControl
                 double pyW = py.Length * pyFs * 0.66 + 4;
                 double cellW = Math.Max(charW, py.Length > 0 ? pyW : 0);
 
+                // 拼音行拆成「声母 + 韵母」两个 Run：当前字的声母/韵母分别着色，
+                // 帮助学习者看清音节结构（如 l + ěi）
                 var pinyinTb = new TextBlock
                 {
-                    Text = py,
                     FontSize = pyFs,
                     FontFamily = PinyinFont,
-                    Foreground = PendingBrush,
                     TextAlignment = TextAlignment.Center,
                     Height = pinyinH
                 };
+                var initialRun = new Run();
+                var finalRun = new Run();
+                pinyinTb.Inlines.Add(initialRun);
+                pinyinTb.Inlines.Add(finalRun);
+                if (py.Length > 0)
+                {
+                    var (pyInitial, pyFinal) = PinyinCharMap.SplitSyllable(py);
+                    initialRun.Text = pyInitial;
+                    finalRun.Text = pyFinal;
+                }
                 var charTb = new TextBlock
                 {
                     Text = ch.ToString(),
@@ -369,7 +382,7 @@ public partial class TypingPage : UserControl
 
                 var container = new InlineUIContainer { Child = cell };
                 para.Inlines.Add(container);
-                _rubyCells.Add(new RubyCell(container, pinyinTb, charTb));
+                _rubyCells.Add(new RubyCell(container, initialRun, finalRun, charTb));
             }
 
             DisplayBox.Document.Blocks.Add(para);
@@ -399,17 +412,30 @@ public partial class TypingPage : UserControl
             var cell = _rubyCells[i];
             if (i < typed.Length)
             {
+                // 已输入：整体绿 / 红（不拆声韵母，避免满屏花）
                 bool ok = target[i] == typed[i];
                 cell.Char.Foreground = ok ? RightBrush : WrongBrush;
                 cell.Char.Background = Brushes.Transparent;
-                cell.Pinyin.Foreground = ok ? RightBrush : WrongBrush;
+                cell.PinyinInitial.Foreground = ok ? RightBrush : WrongBrush;
+                cell.PinyinFinal.Foreground = ok ? RightBrush : WrongBrush;
             }
             else
             {
                 cell.Char.Foreground = PendingBrush;
                 // 当前待输入格：橙色底作为光标指示
                 cell.Char.Background = i == typed.Length ? CaretBrush : Brushes.Transparent;
-                cell.Pinyin.Foreground = i == typed.Length ? CaretBrush : PendingBrush;
+
+                if (i == typed.Length)
+                {
+                    // 当前字：声母橙 / 韵母蓝——把音节结构摆到眼前
+                    cell.PinyinInitial.Foreground = CaretBrush;
+                    cell.PinyinFinal.Foreground = FinalBrush;
+                }
+                else
+                {
+                    cell.PinyinInitial.Foreground = PendingBrush;
+                    cell.PinyinFinal.Foreground = PendingBrush;
+                }
             }
         }
     }
