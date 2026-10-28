@@ -179,6 +179,17 @@
                            FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" Margin="0,2,0,0"
                            Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
 
+                <!-- ===== 拼音辅助（中文练习）===== -->
+                <TextBlock Text="拼音辅助" FontWeight="SemiBold" Margin="0,18,0,4"
+                           Foreground="{DynamicResource GlassTextBrush}"/>
+                <CheckBox Content="中文练习上方标注拼音（带声调，如 lěi）"
+                          IsChecked="{Binding Config.ShowPinyinAbove}" Margin="0,2,0,6"/>
+                <CheckBox Content="打对汉字时自动朗读该字（拼读）"
+                          IsChecked="{Binding Config.SpeakPinyinOnType}" Margin="0,0,0,4"/>
+                <TextBlock Text="拼音按字标注，多音字取最常用读音。朗读依赖系统中文语音引擎，未安装时自动跳过。"
+                           FontSize="11.5" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" Margin="0,2,0,0"
+                           Foreground="{DynamicResource GlassTextSecondaryBrush}"/>
+
                 <CheckBox Content="开启背景音乐（游戏乐园）" IsChecked="{Binding Config.EnableMusic}" Margin="0,16,0,6"/>
 
                 <TextBlock Text="{Binding Config.MusicVolume, StringFormat=音乐音量：{0}}" Margin="0,10,0,4"

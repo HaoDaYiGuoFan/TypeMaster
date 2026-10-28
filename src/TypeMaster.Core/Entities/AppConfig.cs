@@ -73,6 +73,20 @@ public class AppConfig
     /// <summary>进入长辈模式前的语音语速，用于关闭时恢复。</summary>
     public int SpeechRateBeforeElderMode { get; set; }
 
+    // ---------------- 拼音辅助（中文练习）----------------
+
+    /// <summary>
+    /// 中文练习时在对照文本上方标注每个字的带声调拼音（如 lěi）。
+    /// 面向低年级学生与拼音学习者；五笔模式不标注（已有编码对照）。
+    /// </summary>
+    public bool ShowPinyinAbove { get; set; } = true;
+
+    /// <summary>
+    /// 中文练习时打对一个汉字，自动朗读该字（标准读音即拼读结果）。
+    /// 依赖系统中文语音引擎；未安装时自动跳过。
+    /// </summary>
+    public bool SpeakPinyinOnType { get; set; } = true;
+
     // ---------------- 显示适配（高分屏 / 低分屏高缩放）----------------
 
     /// <summary>

@@ -49,7 +49,10 @@ public static class SqliteSchemaUpgrader
                 // 显示适配：默认值与 AppConfig 保持一致，
                 // 保证既有用户升级后界面外观不变（UiScale 默认 1.0）。
                 ("UiScale", "REAL NOT NULL DEFAULT 1.0"),
-                ("AutoFitWindow", "INTEGER NOT NULL DEFAULT 1")
+                ("AutoFitWindow", "INTEGER NOT NULL DEFAULT 1"),
+                // 拼音辅助：默认开启（与 AppConfig 保持一致）
+                ("ShowPinyinAbove", "INTEGER NOT NULL DEFAULT 1"),
+                ("SpeakPinyinOnType", "INTEGER NOT NULL DEFAULT 1")
             }
         };
 

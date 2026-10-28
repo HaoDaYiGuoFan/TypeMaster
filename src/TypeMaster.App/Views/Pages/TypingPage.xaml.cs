@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TypeMaster.App;
 using TypeMaster.App.Views.Windows;
 using TypeMaster.Core;
+using TypeMaster.Core.Enums;
 using TypeMaster.Core.Interfaces;
 using TypeMaster.Services;
 using TypeMaster.ViewModels;
@@ -32,6 +33,24 @@ public partial class TypingPage : UserControl
     private static readonly string[] FxBrushKeys =
         { "PrimaryHueMidBrush", "SecondaryHueMidBrush", "FestiveGreen", "FestiveAmber", "FestiveBlue", "FestiveTeal" };
 
+    // ---------------- 中文拼音标注（每字一格：上拼音、下汉字）----------------
+    //
+    // 性能设计：普通渲染每次击键都重建整个段落（每字一个 Run）。
+    // 拼音格比 Run 重得多（每个是 InlineUIContainer + 3 个元素），
+    // 若每次击键全量重建会造成输入卡顿。因此拆成两步：
+    //   · 换新文本时重建格子（_rubyTarget 变化才重建）
+    //   · 击键时只对已有格子改颜色/高亮（纯属性赋值，无对象创建、无布局重建）
+    private string? _rubyTarget;
+
+    /// <summary>一行拼音格缓存，与 TargetText 逐字符对应。</summary>
+    private List<RubyCell>? _rubyCells;
+
+    /// <summary>拼音行的字体（Segoe UI 对声调字母 ā ǎ ǖ 的覆盖最完整）。</summary>
+    private static readonly FontFamily PinyinFont = new("Segoe UI");
+
+    /// <summary>一个拼音格：容器 + 拼音行 + 汉字行。</summary>
+    private sealed record RubyCell(InlineUIContainer Container, TextBlock Pinyin, TextBlock Char);
+
     public TypingPage()
     {
         InitializeComponent();
@@ -44,6 +63,8 @@ public partial class TypingPage : UserControl
         _vm.EffectRequested += OnEffect;
         // 五笔学习提示的朗读：由 VM 在切换到新字时发起，页面负责调用语音服务
         _vm.WubiSpeakRequested += OnWubiSpeakRequested;
+        // 中文练习打对汉字的拼读：同样由 VM 发起、页面调用语音服务
+        _vm.ChineseCharCompleted += OnChineseCharCompleted;
         AppState.SettingsChanged += (_, _) => ApplySettings();
         InputBox.TextChanged += (_, _) => _vm.SetTyped(InputBox.Text);
 
@@ -78,6 +99,27 @@ public partial class TypingPage : UserControl
 
     /// <summary>五笔编码提示的相对语速偏移（负数更慢）。</summary>
     private const int WubiHintSpeechRateOffset = -2;
+
+    /// <summary>中文打对时的朗读语速偏移（比常规慢 1 档，字音更清晰）。</summary>
+    private const int ChineseCharSpeechRateOffset = -1;
+
+    /// <summary>
+    /// 朗读打对的汉字（如「泪」→ lèi 的标准读音）。
+    ///
+    /// 为什么读汉字而不是拼音串：TTS 读拉丁拼音（如 "lěi"）会被当成
+    /// 英文音节念错；读汉字本身得到的就是该字的标准读音，即拼读结果。
+    /// </summary>
+    private void OnChineseCharCompleted(object? sender, char ch)
+    {
+        try
+        {
+            _speech.Speak(ch.ToString(), ChineseCharSpeechRateOffset);
+        }
+        catch
+        {
+            // 朗读失败不应影响打字
+        }
+    }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -211,6 +253,10 @@ public partial class TypingPage : UserControl
             DisplayBox.FontSize = Math.Max(cfg.FontSize, 24);
             InputBox.FontSize = Math.Max(cfg.FontSize, 22);
         }
+
+        // 拼音格的列宽/字号都依赖这些设置：丢弃缓存，下一次渲染按新设置重建
+        _rubyTarget = null;
+        RenderDisplay();
     }
 
     /// <summary>
@@ -219,15 +265,26 @@ public partial class TypingPage : UserControl
     /// </summary>
     private void RenderDisplay()
     {
-        DisplayBox.Document.Blocks.Clear();
         if (_vm.IsWubiMode)
         {
+            DisplayBox.Document.Blocks.Clear();
+            _rubyCells = null;
             RenderWubiDisplay();
             return;
         }
 
         var target = _vm.TargetText ?? string.Empty;
         var typed = _vm.TypedText ?? string.Empty;
+
+        // 中文模式且开启拼音标注：每字一格（上拼音、下汉字）
+        if (UseChineseRuby())
+        {
+            RenderChineseRuby(target, typed);
+            return;
+        }
+
+        _rubyCells = null;
+        DisplayBox.Document.Blocks.Clear();
 
         var para = new Paragraph { Margin = new Thickness(0), LineHeight = 1.7 };
         for (int i = 0; i < target.Length; i++)
@@ -245,6 +302,116 @@ public partial class TypingPage : UserControl
 
         DisplayBox.Document.Blocks.Add(para);
         ScrollCaretIntoView(typed.Length);
+    }
+
+    /// <summary>当前模式是否启用拼音标注（仅中文 / 中文词组，且设置开启）。</summary>
+    private bool UseChineseRuby()
+        => AppState.Current.ShowPinyinAbove
+           && !_vm.IsWubiMode
+           && _vm.SelectedType is PracticeType.Chinese or PracticeType.ChineseWord;
+
+    /// <summary>
+    /// 中文练习的拼音标注渲染：每个汉字上方标注带声调拼音（如 lěi）。
+    ///
+    /// 结构：每字一个固定宽度的竖排格（拼音行 + 汉字行），横向排布、
+    /// 自动换行——拼音列宽按自身长度自适应，汉字（等宽方块字）居中，
+    /// 视觉上拼音正好落在对应汉字上方。
+    ///
+    /// 性能：只在文本变化时重建；击键仅做颜色更新（见 UpdateRubyColors）。
+    /// </summary>
+    /// <param name="target">对照文本</param>
+    /// <param name="typed">已输入文本</param>
+    private void RenderChineseRuby(string target, string typed)
+    {
+        bool rebuild = _rubyTarget != target || _rubyCells is null;
+
+        if (rebuild)
+        {
+            DisplayBox.Document.Blocks.Clear();
+            _rubyCells = new List<RubyCell>(target.Length);
+            var para = new Paragraph { Margin = new Thickness(0) };
+
+            // 汉字字号以 DisplayBox 实际生效值为准（长辈模式会被调大）
+            double fs = DisplayBox.FontSize;
+            double pyFs = Math.Clamp(fs * 0.55, 11, 16);
+            double pinyinH = pyFs * 1.45;
+            double cellH = pinyinH + fs * 1.3;
+
+            for (int i = 0; i < target.Length; i++)
+            {
+                char ch = target[i];
+                string py = PinyinCharMap.TryGetPinyin(ch, out string found) ? found : string.Empty;
+
+                // 列宽：取「汉字宽」与「拼音宽」的较大者，避免相邻拼音互相重叠
+                bool wide = ch >= 0x2E80;                       // CJK 与全角标点
+                double charW = wide ? fs : fs * 0.6;
+                double pyW = py.Length * pyFs * 0.66 + 4;
+                double cellW = Math.Max(charW, py.Length > 0 ? pyW : 0);
+
+                var pinyinTb = new TextBlock
+                {
+                    Text = py,
+                    FontSize = pyFs,
+                    FontFamily = PinyinFont,
+                    Foreground = PendingBrush,
+                    TextAlignment = TextAlignment.Center,
+                    Height = pinyinH
+                };
+                var charTb = new TextBlock
+                {
+                    Text = ch.ToString(),
+                    FontSize = fs,
+                    FontFamily = DisplayBox.FontFamily,
+                    Foreground = PendingBrush,
+                    TextAlignment = TextAlignment.Center
+                };
+                var cell = new StackPanel { Width = cellW, Height = cellH, Children = { pinyinTb, charTb } };
+
+                var container = new InlineUIContainer { Child = cell };
+                para.Inlines.Add(container);
+                _rubyCells.Add(new RubyCell(container, pinyinTb, charTb));
+            }
+
+            DisplayBox.Document.Blocks.Add(para);
+            _rubyTarget = target;
+        }
+
+        UpdateRubyColors(target, typed);
+        ScrollCaretIntoView(typed.Length);
+    }
+
+    /// <summary>
+    /// 击键时的颜色更新：逐格设置前景/背景（含当前格的橙色光标底）。
+    /// 纯属性赋值、无对象创建，长文本下也不卡顿。
+    /// </summary>
+    /// <param name="target">对照文本</param>
+    /// <param name="typed">已输入文本</param>
+    private void UpdateRubyColors(string target, string typed)
+    {
+        if (_rubyCells is null)
+        {
+            return;
+        }
+
+        int n = Math.Min(_rubyCells.Count, target.Length);
+        for (int i = 0; i < n; i++)
+        {
+            var cell = _rubyCells[i];
+            if (i < typed.Length)
+            {
+                bool ok = target[i] == typed[i];
+                cell.Char.Foreground = ok ? RightBrush : WrongBrush;
+                cell.Char.Background = Brushes.Transparent;
+                cell.Pinyin.Foreground = ok ? RightBrush : WrongBrush;
+            }
+            else
+            {
+                cell.Char.Foreground = PendingBrush;
+                // 当前待输入格：橙色底作为光标指示
+                cell.Char.Background = i == typed.Length ? CaretBrush : Brushes.Transparent;
+                cell.Pinyin.Foreground = i == typed.Length ? CaretBrush : PendingBrush;
+            }
+        }
     }
 
     /// <summary>
@@ -265,14 +432,16 @@ public partial class TypingPage : UserControl
                 return;
             }
 
-            // 越界保护：续接文本后下标可能暂时超出
+            // 越界保护：续接文本后下标可能暂时超出。
+            // 兼容两种 inline：普通 Run 与拼音标注的 InlineUIContainer。
             int idx = Math.Clamp(caretIndex, 0, para.Inlines.Count - 1);
-            if (para.Inlines.ElementAtOrDefault(idx) is not Run caretRun)
+            var caretInline = para.Inlines.ElementAtOrDefault(idx);
+            if (caretInline is null)
             {
                 return;
             }
 
-            Rect rect = caretRun.ContentStart.GetCharacterRect(LogicalDirection.Forward);
+            Rect rect = caretInline.ContentStart.GetCharacterRect(LogicalDirection.Forward);
             if (rect.IsEmpty)
             {
                 return;

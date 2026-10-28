@@ -671,6 +671,7 @@ public partial class TypingViewModel : ObservableObject
         GradeChineseText = "尚未评定";
         GradeStars = 0;
         _lastSpokenWubiChar = '\0';
+        _lastSpokenCharIndex = -1;
         ClearWubiHint();
         _timer.Stop();
 
@@ -805,12 +806,54 @@ public partial class TypingViewModel : ObservableObject
 
         UpdateGradePreview(result);
         RefreshWubiHint();
+        RaiseChineseCharRead(target, typed);
 
         PlayFeedback(target, typed);
 
         if (result.IsCompleted && !_committed)
         {
             FinishSession(result, "已完成！可点击提交保存成绩");
+        }
+    }
+
+    /// <summary>已朗读到的汉字下标（单调递增，删除重打不反复朗读）。</summary>
+    private int _lastSpokenCharIndex = -1;
+
+    /// <summary>
+    /// 中文练习：检测本次输入中新「打对」的汉字并发起拼读。
+    ///
+    /// 只在打对时触发——打错有既有的错误反馈（红字 + 抖动），不掺和；
+    /// 下标单调递增，删除重打不会反复朗读同一个字。
+    /// </summary>
+    /// <param name="target">对照文本</param>
+    /// <param name="typed">已输入文本</param>
+    private void RaiseChineseCharRead(string target, string typed)
+    {
+        if (IsWubiMode || _committed)
+        {
+            return;
+        }
+        if (SelectedType is not (PracticeType.Chinese or PracticeType.ChineseWord))
+        {
+            return;
+        }
+        if (!AppState.Current.SpeakPinyinOnType)
+        {
+            return;
+        }
+        if (string.IsNullOrEmpty(target) || typed.Length <= _lastSpokenCharIndex)
+        {
+            return;
+        }
+
+        int last = Math.Min(typed.Length, target.Length) - 1;
+        for (int i = _lastSpokenCharIndex + 1; i <= last; i++)
+        {
+            if (target[i] == typed[i] && IsCjk(target[i]))
+            {
+                _lastSpokenCharIndex = i;
+                ChineseCharCompleted?.Invoke(this, target[i]);
+            }
         }
     }
 
@@ -906,6 +949,12 @@ public partial class TypingViewModel : ObservableObject
 
     /// <summary>请求朗读五笔提示文本（由页面订阅并调用语音服务）。</summary>
     public event System.EventHandler<string>? WubiSpeakRequested;
+
+    /// <summary>
+    /// 中文练习中打对一个汉字（由页面订阅并朗读该字）。
+    /// 参数即打对的汉字；只对 CJK 字触发，标点不读。
+    /// </summary>
+    public event System.EventHandler<char>? ChineseCharCompleted;
 
     /// <summary>实时刷新评级预览，让用户边打边知道当前是什么水平。</summary>
     private void UpdateGradePreview(TypingResult result)
