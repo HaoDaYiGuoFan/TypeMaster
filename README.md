@@ -65,8 +65,10 @@
 - **入门档**——比简单档更易，专为刚接触键盘的小学生准备
   （文本 50 字符起、英文达标 7 WPM 起、游戏生命更多节奏更慢）
 - **逐字实时着色**——正确=绿、错误=红、未输入=灰、当前字符=橙色高亮
-- **拼音标注**——中文练习时每个汉字上方显示带声调拼音（如 lěi），
-  打对时自动朗读该字（可在设置中关闭）
+- **拼音标注与拼读**——中文练习时每个汉字上方显示带声调拼音（如 lěi），
+  当前字的**声母/韵母双色**（声母=橙、韵母=蓝，音节结构一眼可见）；
+  打对时自动朗读该字的**标准读音**——读汉字而非拼音串，发音准确
+  （标注与拼读均可在设置 → 拼音辅助 中开关）
 - **自动续接**——打到文本接近末尾时自动接上**新的**内容，练习可以一直进行，想停时点「提交成绩」即可
 - **自动滚动**——对照文本超出一屏时，视口自动跟随当前输入位置
 - **虚拟键盘**——跟随物理按键实时高亮，基准键 `ASDF JKL;` 以浅绿底色提示指法
@@ -103,6 +105,9 @@
 - **五笔逐码提示**——练习时显示「第2码 E键（月）」，把编码逐位翻译成按键
 - **拼音表**——23 声母 / 24 韵母 / 16 整体认读，共 63 个拼音胶囊
 - **语音朗读**——点击即可朗读字根口诀与拼音（离线 TTS，无需联网）
+  - 朗读引擎为**双引擎**：优先 WinRT 语音合成（能看到 Win10/11 的新语音），
+    System.Speech 兜底；自动挑选最自然的中文语音，
+    安装 Windows「自然语音」（免费、离线）后自动优先使用
   - 拼音用**呼读音汉字表**发音（直接读字母会被读成英文字母名）
   - 口诀自动**剥离括号提示**，生僻字用同音字替换表纠正
 
@@ -132,11 +137,12 @@
 - **显示适配**——界面缩放（0.8~1.6 倍）、启动自动适配屏幕、窗口尺寸按屏幕约束
 - **长辈模式**（一键预设）——字号放大、语速放慢、五笔提示与语音朗读全开、切护眼绿主题
 - **五笔学习辅助**（可单项开关）——逐码按键提示 / 大字显示当前字 / 切换到新字时朗读编码
+- **拼音辅助**（可单项开关）——显示拼音标注 / 打对时拼读汉字
 - **三套主题**：亮色 / 护眼绿 / 暗黑
 - 字体与字号（默认 Consolas 22）
 - 虚拟键盘开关
 - 音效开关与音量、BGM 开关与音量
-- 语音朗读开关与语速
+- 语音朗读开关与语速（页面内置「自然语音」安装指引）
 
 ---
 
@@ -144,7 +150,7 @@
 
 ### 方式一：直接运行（推荐给普通用户）
 
-1. 从 [Releases](../../releases) 页面下载 `TypeMaster-v1.0.928-win-x64.zip`
+1. 从 [Releases](../../releases) 页面下载 `TypeMaster-v1.0.1028-win-x64.zip`
 2. 解压到任意目录
 3. 双击 `TypeMaster.exe` 即可运行
 
@@ -186,10 +192,11 @@ TypeMaster/
 │  │  ├─ GameWords.cs               # 游戏词库（按难度分档，已剔除人名与缩写）
 │  │  ├─ WubiLibrary.cs             # 五笔字根表 + 6489 常用字编码 + 逐码提示
 │  │  ├─ PinyinLibrary.cs           # 拼音声韵母表
+│  │  ├─ PinyinCharMap.cs           # 拼音标注字表（20910 字）+ 声韵母拆分
 │  │  ├─ CourseLibrary.cs           # 30 关课程定义（含入门支线 + 五笔入门支线）
 │  │  ├─ AudioEngine.cs             # NAudio 共享混音器
 │  │  ├─ MusicLibrary.cs            # BGM 曲目表
-│  │  ├─ SpeechService.cs           # 语音朗读（System.Speech）
+│  │  ├─ SpeechService.cs           # 语音朗读（WinRT 优先 + System.Speech 兜底）
 │  │  ├─ KeyboardHookService.cs     # 全局键盘钩子（WH_KEYBOARD_LL）
 │  │  └─ ...
 │  │
@@ -225,7 +232,7 @@ TypeMaster/
 
 | 分类 | 组件 | 版本 | 用途 |
 | --- | --- | --- | --- |
-| 运行时 | .NET | 8.0 | `net8.0-windows` |
+| 运行时 | .NET | 8.0 | `net8.0` / `net8.0-windows10.0.19041.0`（WinRT 语音所需） |
 | UI 框架 | WPF | — | 桌面窗口与控件 |
 | UI 美化 | MaterialDesignThemes | 4.9.0 | 卡片、按钮、矢量图标、弹性动画 |
 | UI 美化 | MaterialDesignColors | 2.1.4 | 配色 |
@@ -234,14 +241,14 @@ TypeMaster/
 | 依赖注入 | Microsoft.Extensions.DependencyInjection | 8.0.0 | 服务容器 |
 | 数据持久化 | Microsoft.EntityFrameworkCore.Sqlite | 8.0.8 | 成绩与配置存储 |
 | 音频 | NAudio | 2.2.1 | BGM 播放、音效合成、混音 |
-| 语音 | System.Speech | 8.0.0 | 离线 TTS 朗读 |
+| 语音 | Windows SDK（WinRT）+ System.Speech | 10.0.19041 / 8.0.0 | 离线 TTS 双引擎（WinRT 优先，SAPI 兜底） |
 
 ### 为什么这样选
 
 - **BGM 与音效共用一个 `WaveOutEvent`**：Windows 上多个 WaveOut 设备会互相抢占，BGM 与音效无法真正叠加。因此用共享单例 `AudioEngine` + `MixingSampleProvider` 统一混音。
 - **BGM 为原创合成**：不引入授权不明的第三方音乐素材。7 首曲子由多声部合成生成，各有独立 BPM（112~152）。
-- **语音用离线 TTS**：`System.Speech` 调用系统已安装的中文语音引擎（如 `Microsoft Huihui Desktop`），无网络请求。
-- **`TypeMaster.Services` 目标框架为 `net8.0-windows`**：NAudio 的 `WaveOut` 与 SAPI 都是 Windows 专有 API；但服务层不依赖 WPF（淡入淡出用 `System.Threading.Timer` 而非 `DispatcherTimer`）。
+- **语音用离线 TTS 双引擎**：优先 WinRT（`Windows.Media.SpeechSynthesis`，能看到 Win10/11 的 OneCore 语音与自然语音），`System.Speech` 兜底；合成结果经 NAudio 播放；全程无网络请求。
+- **`Services` / `ViewModels` / `App` 目标框架为 `net8.0-windows10.0.19041.0`**：NAudio 的 `WaveOut`、SAPI 与 WinRT 语音合成都是 Windows 专有 API（引用 WinRT 需要此目标框架）；但服务层不依赖 WPF（淡入淡出用 `System.Threading.Timer` 而非 `DispatcherTimer`）。
 
 ---
 
@@ -384,7 +391,7 @@ dotnet publish src/TypeMaster.App/TypeMaster.App.csproj `
 > 不加上这个开关时，单独拷走 exe 运行会因缺少原生库而崩溃。
 > 加上之后，WPF 渲染与 SQLite 所需的原生 DLL 会一起打包。
 
-产物体积约 **175 MB**（自包含 + 原生库），单独拷到任意目录均可运行。
+产物体积约 **200 MB**（自包含 + 原生库 + WinRT 语音投影），单独拷到任意目录均可运行。
 
 更多构建细节与排错见 [`docs/BUILD.md`](docs/BUILD.md)。
 
@@ -442,10 +449,21 @@ dotnet publish src/TypeMaster.App/TypeMaster.App.csproj `
 </details>
 
 <details>
+<summary><b>多音字标注为什么有时和课文读音不一样？</b></summary>
+
+拼音标注**暂无语境消歧**，取的是该字在语料中的最常用读音
+（常用多音字如「地」「得」「长」「教」已按语料实测校正）。
+个别语境下标注可能与课文读音不同，以老师教的为准。
+</details>
+
+<details>
 <summary><b>语音朗读没有声音？</b></summary>
 
 语音朗读依赖系统已安装的**中文语音引擎**。可在「设置 → 时间和语言 → 语音」
 中检查是否安装了中文语音包。若系统缺少中文引擎，朗读功能会自动跳过而不会报错。
+
+想要更自然的音色：Windows 11 可在「设置 → 辅助功能 → 讲述人 → 添加自然语音」
+免费安装**自然语音**（离线可用），应用会自动优先选用。
 </details>
 
 <details>
@@ -468,7 +486,8 @@ BGM 与音效通过共享混音器播放，两者可同时生效，互不抢占�
 <details>
 <summary><b>为什么发布包这么大（175MB）？</b></summary>
 
-因为它是**自包含单文件**：内含 .NET 运行时、WPF 原生渲染库、SQLite 原生库。
+因为它是**自包含单文件**：内含 .NET 运行时、WPF 原生渲染库、SQLite 原生库，
+以及 WinRT 语音合成所需的投影组件。
 好处是**目标机器无需安装任何运行时**，拷走即用。
 </details>
 
